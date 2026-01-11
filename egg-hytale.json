@@ -4,7 +4,7 @@
         "version": "PLCN_v3",
         "update_url": "https://raw.githubusercontent.com/NATroutter/egg-hytale/refs/heads/main/egg-hytale.json"
     },
-    "exported_at": "2026-01-11T20:44:18+00:00",
+    "exported_at": "2026-01-11T21:39:39+00:00",
     "name": "Hytale",
     "author": "contact@natroutter.fi",
     "uuid": "6594b287-2d7b-4249-bc93-4d40283c57e3",
@@ -41,12 +41,11 @@
             "name": "Accept Early Plugins",
             "description": "Acknowledge that loading early plugins is unsupported and may cause stability issues",
             "env_variable": "ACCEPT_EARLY_PLUGINS",
-            "default_value": "false",
+            "default_value": "0",
             "user_viewable": false,
             "user_editable": true,
             "rules": [
                 "boolean",
-                "in:true,false",
                 "required"
             ],
             "sort": 3
@@ -55,12 +54,11 @@
             "name": "Allow OP",
             "description": "Do you wish to allow op or not",
             "env_variable": "ALLOW_OP",
-            "default_value": "true",
+            "default_value": "1",
             "user_viewable": false,
             "user_editable": true,
             "rules": [
                 "boolean",
-                "in:true,false",
                 "required"
             ],
             "sort": 1
@@ -74,7 +72,6 @@
             "user_editable": true,
             "rules": [
                 "string",
-                "required",
                 "regex:/^([\\w\\d._-]+)(\\.zip)$/"
             ],
             "sort": 2
@@ -101,9 +98,8 @@
             "user_viewable": false,
             "user_editable": true,
             "rules": [
-                "boolean",
-                "in:true,false",
-                "required"
+                "required",
+                "string"
             ],
             "sort": 6
         },
@@ -122,18 +118,43 @@
             "sort": 7
         },
         {
-            "name": "Enable Backups",
-            "description": "Enable automatic backups",
-            "env_variable": "ENABLE_BACKUPS",
-            "default_value": "false",
+            "name": "Disable Sentry Crash Reporting",
+            "description": "Important: Disable Sentry during active plugin development.\n\nHytale use Sentry to track crashes. Disable it to avoid submitting your development errors",
+            "env_variable": "DISABLE_SENTRY",
+            "default_value": "1",
             "user_viewable": false,
             "user_editable": true,
             "rules": [
                 "boolean",
-                "in:true,false",
+                "required"
+            ],
+            "sort": 9
+        },
+        {
+            "name": "Enable Backups",
+            "description": "Enable automatic backups",
+            "env_variable": "ENABLE_BACKUPS",
+            "default_value": "0",
+            "user_viewable": false,
+            "user_editable": true,
+            "rules": [
+                "boolean",
                 "required"
             ],
             "sort": 5
+        },
+        {
+            "name": "Leverage Ahead-Of-Time Cache",
+            "description": "The server ships with a pre-trained AOT cache (HytaleServer.aot) that improves boot times by skipping JIT warmup. See https://openjdk.org/jeps/514",
+            "env_variable": "LEVERAGE_AHEAD_OF_TIME_CACHE",
+            "default_value": "1",
+            "user_viewable": false,
+            "user_editable": true,
+            "rules": [
+                "required",
+                "boolean"
+            ],
+            "sort": 8
         }
     ]
 }

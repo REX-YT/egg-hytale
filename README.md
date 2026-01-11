@@ -74,6 +74,26 @@ Once installed, simply start the server from your Pelican Panel. The egg will ha
 1. Running the Hytale downloader to fetch the latest server files
 2. Starting the server with your configured parameters
 
+### First-Time Authentication
+
+During the first installation, the Hytale downloader will require authentication with your Hytale account. You'll see output similar to this in the console:
+
+```
+Please visit the following URL to authenticate:
+https://oauth.accounts.hytale.com/oauth2/device/verify?user_code=XXXXXXXX
+Or visit the following URL and enter the code:
+https://oauth.accounts.hytale.com/oauth2/device/verify
+Authorization code: XXXXXXXX
+```
+
+**To complete authentication:**
+1. Open the provided URL in your web browser
+2. Enter the authorization code shown in the console
+3. Sign in with your Hytale account credentials
+4. Authorize the server to download game files
+5. Return to the console - the download will continue automatically
+
+This authentication step is only required during initial setup. Subsequent server starts will not require re-authentication.
 
 ## Contributing
 
