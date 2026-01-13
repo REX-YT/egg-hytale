@@ -45,22 +45,22 @@ Both Pelican Panel and Pterodactyl Panel are fully supported with dedicated egg 
 
 ## Server Configuration
 
-The following variables can be configured:
+The following options can be configured:
 
-| Variable | Description | Default |
+| Option | Description | Default |
 | ---------- | ------------- | --------- |
-| `GAME_PROFILE` | Hytale profile username for server authentication. Visit [accounts.hytale.com](https://accounts.hytale.com/) → Game Profiles to find your username. Leave empty to use first profile. | (empty) |
-| `ASSET_PACK` | Assets pack (.zip) that are being send to player | `Assets.zip` |
-| `ACCEPT_EARLY_PLUGINS` | Acknowledge that loading early plugins is unsupported and may cause stability issues | `false` |
-| `ALLOW_OP` | Do you wish to allow operators or not | `true` |
-| `AUTH_MODE` | Authentication mode (authenticated or offline) | `authenticated` |
-| `AUTOMATIC_UPDATE` | Update the hytale server automatically | `true` |
-| `JVM_ARGS` | Additional Java Virtual Machine arguments for advanced configuration. | See egg config |
-| `LEVERAGE_AHEAD_OF_TIME_CACHE` | The server ships with a pre-trained AOT cache (HytaleServer.aot) that improves boot times by skipping JIT warmup | `true` |
-| `DISABLE_SENTRY` | Disable Sentry during active plugin development. Hytale uses Sentry to track crashes. Disable it to avoid submitting your development errors | `true` |
-| `ENABLE_BACKUPS` | Enable automatic backups | `false` |
-| `BACKUP_DIRECTORY` | Directory where backups are saved | `/backup` |
-| `BACKUP_FREQUENCY` | Backup interval in minutes | `30` |
+| `Game Profile (username)` | Hytale profile username for server authentication. Visit [accounts.hytale.com](https://accounts.hytale.com/) → Game Profiles to find your username. Leave empty to use first profile. | (empty) |
+| `Asset Pack` | Assets pack (.zip) that are being send to player | `Assets.zip` |
+| `Accept Early Plugins` | Acknowledge that loading early plugins is unsupported and may cause stability issues | `false` |
+| `Allow Operators` | Do you wish to allow operators or not | `true` |
+| `Auth Mode` | Authentication mode (authenticated or offline) | `authenticated` |
+| `Automatic Update` | Update the hytale server automatically | `true` |
+| `JVM Arguments` | Additional Java Virtual Machine arguments for advanced configuration. | See egg config |
+| `Leverage Ahead-Of-Time Cache` | The server ships with a pre-trained AOT cache (HytaleServer.aot) that improves boot times by skipping JIT warmup | `true` |
+| `Disable Sentry Crash Reporting` | Disable Sentry during active plugin development. Hytale uses Sentry to track crashes. Disable it to avoid submitting your development errors | `true` |
+| `Enable Backups` | Enable automatic backups | `false` |
+| `Backup Directory` | Directory where backups are saved | `/backup` |
+| `Backup Frequency` | Backup interval in minutes | `30` |
 
 ### First-Time Authentication
 
