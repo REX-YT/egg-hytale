@@ -40,6 +40,31 @@ Both Pelican Panel and Pterodactyl Panel are fully supported with dedicated egg 
 5. Select the downloaded JSON file
 6. Configure the egg settings as needed
 
+## Updating the Egg
+
+When a new version of the egg is released, follow these steps to update:
+
+### Pelican Panel
+
+1. Download the latest [egg-hytale.pelican.json](egg-hytale.pelican.json) file from this repository
+2. In your Pelican Panel, navigate to **Admin Panel** > **Eggs**
+3. Click the "Hytale" egg from the list
+4. Click **Import** on top right and select the downloaded JSON file
+5. For each server using this egg, navigate to the server's page
+6. Click **Settings** > **Reinstall Server**
+
+### Pterodactyl Panel
+
+1. Download the latest [egg-hytale.pterodactyl.json](egg-hytale.pterodactyl.json) file from this repository
+2. In your Pterodactyl Panel, navigate to **Admin Panel** > **Nests**
+3. Click on the nest where hytale egg is imported
+4. Click on the hytale egg to open it
+5. On top of the page there update egg section where you can select the new egg Click **Update Egg**
+6. For each server using this egg, navigate to the server's page
+7. Click **Settings** > **Reinstall Server**
+
+> **Important Note:** Don't worry about reinstalling! The reinstall process does **NOT** delete your existing server files, world data, or configurations. It simply runs the installation script again to fetch the latest egg files and dependencies. Your server data remains safe and intact.
+
 ## Server Configuration
 
 The following options can be configured:
