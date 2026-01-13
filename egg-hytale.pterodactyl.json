@@ -4,7 +4,7 @@
         "version": "PTDL_v2",
         "update_url": "https:\/\/raw.githubusercontent.com\/NATroutter\/egg-hytale\/refs\/heads\/main\/egg-hytale.pterodactyl.json"
     },
-    "exported_at": "2026-01-12T19:49:12+02:00",
+    "exported_at": "2026-01-13T14:30:56+02:00",
     "name": "Hytale",
     "author": "contact@natroutter.fi",
     "description": "Hytale is a block-based sandbox game that blends creative building with RPG adventure. Explore procedurally generated worlds filled with unique biomes, dungeons, and creatures. Build anything from simple homes to grand castles, craft items, and battle monsters. Create custom content with built-in modding tools, host your own servers, and shape the experience with plugins and mods. Play solo or with friends in a world designed for both creation and exploration.\r\n\r\nCredits:\r\n- Made by NATroutter\r\n- https:\/\/natroutter.fi\r\n- https:\/\/github.com\/NATroutter",
@@ -30,6 +30,16 @@
         }
     },
     "variables": [
+        {
+            "name": "Game Profile (username)",
+            "description": "Specify which Hytale profile should be used for server authentication.\r\n\r\nHow to find your profile username:\r\n1. Visit https:\/\/accounts.hytale.com\/\r\n2. Click \"Game Profiles\" in the left side menu\r\n3. Copy the username of the profile you want to use\r\n4. Paste it into this field\r\n\r\nLeave empty to use your default\/first profile automatically.",
+            "env_variable": "GAME_PROFILE",
+            "default_value": "",
+            "user_viewable": true,
+            "user_editable": true,
+            "rules": "nullable|string",
+            "field_type": "text"
+        },
         {
             "name": "Accept Early Plugins",
             "description": "Acknowledge that loading early plugins is unsupported and may cause stability issues",

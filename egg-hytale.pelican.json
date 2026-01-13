@@ -2,9 +2,9 @@
     "_comment": "DO NOT EDIT: FILE GENERATED AUTOMATICALLY BY PANEL",
     "meta": {
         "version": "PLCN_v3",
-        "update_url": "https://raw.githubusercontent.com/NATroutter/egg-hytale/refs/heads/main/egg-hytale.json"
+        "update_url": "https://raw.githubusercontent.com/NATroutter/egg-hytale/refs/heads/main/egg-hytale.pelican.json"
     },
-    "exported_at": "2026-01-12T17:49:33+00:00",
+    "exported_at": "2026-01-13T12:29:34+00:00",
     "name": "Hytale",
     "author": "contact@natroutter.fi",
     "uuid": "6594b287-2d7b-4249-bc93-4d40283c57e3",
@@ -31,7 +31,7 @@
     },
     "scripts": {
         "installation": {
-            "script": "#!/bin/bash\nDOWNLOAD_URL=\"https://downloader.hytale.com/hytale-downloader.zip\"\nDOWNLOAD_FILE=\"hytale-downloader.zip\"\n\napt update\napt install -y curl unzip\n\ncd /mnt/server\n\n# Downloads and extracts the Hytale downloader\necho \"Starting Hytale downloader installation...\"\n\n# Download the file\necho \"Downloading hytale-downloader.zip...\"\ncurl -L -o \"${DOWNLOAD_FILE}\" \"${DOWNLOAD_URL}\"\n\nif [ $? -ne 0 ]; then\n    echo \"Error: Failed to download ${DOWNLOAD_URL}\"\n    exit 1\nfi\n\necho \"Download completed successfully.\"\n\n# Extract the zip file\necho \"Extracting ${DOWNLOAD_FILE}...\"\nunzip -o \"${DOWNLOAD_FILE}\"\n\nif [ $? -ne 0 ]; then\n    echo \"Error: Failed to extract ${DOWNLOAD_FILE}\"\n    exit 1\nfi\n\necho \"Extraction completed successfully.\"\n\n# Remove the unnessasery file\necho \"Cleaning up...\"\nrm \"${DOWNLOAD_FILE}\"\nrm QUICKSTART.md\nrm hytale-downloader-windows-amd64.exe\n\necho \"Downloading start.sh script...\"\ncurl -L -o start.sh \"https://raw.githubusercontent.com/NATroutter/egg-hytale/main/start.sh\"\n\nif [ $? -ne 0 ]; then\n    echo \"Error: Failed to download start.sh\"\n    exit 1\nfi\n\necho \"Setting executable permissions...\"\nchmod +x ./hytale-downloader-linux-amd64\nchmod +x ./start.sh\n\necho \"Installation complete!\"",
+            "script": "#!/bin/bash\nDOWNLOAD_URL=\"https://downloader.hytale.com/hytale-downloader.zip\"\nDOWNLOAD_FILE=\"hytale-downloader.zip\"\n\napt update\napt install -y curl unzip jq\n\ncd /mnt/server\n\n# Downloads and extracts the Hytale downloader\necho \"Starting Hytale downloader installation...\"\n\n# Download the file\necho \"Downloading hytale-downloader.zip...\"\ncurl -L -o \"${DOWNLOAD_FILE}\" \"${DOWNLOAD_URL}\"\n\nif [ $? -ne 0 ]; then\n    echo \"Error: Failed to download ${DOWNLOAD_URL}\"\n    exit 1\nfi\n\necho \"Download completed successfully.\"\n\n# Extract the zip file\necho \"Extracting ${DOWNLOAD_FILE}...\"\nunzip -o \"${DOWNLOAD_FILE}\"\n\nif [ $? -ne 0 ]; then\n    echo \"Error: Failed to extract ${DOWNLOAD_FILE}\"\n    exit 1\nfi\n\necho \"Extraction completed successfully.\"\n\n# Remove the unnessasery file\necho \"Cleaning up...\"\nrm \"${DOWNLOAD_FILE}\"\nrm QUICKSTART.md\nrm hytale-downloader-windows-amd64.exe\n\necho \"Downloading start.sh script...\"\ncurl -L -o start.sh \"https://raw.githubusercontent.com/NATroutter/egg-hytale/main/start.sh\"\n\nif [ $? -ne 0 ]; then\n    echo \"Error: Failed to download start.sh\"\n    exit 1\nfi\n\necho \"Setting executable permissions...\"\nchmod +x ./hytale-downloader-linux-amd64\nchmod +x ./start.sh\n\necho \"Installation complete!\"",
             "container": "ghcr.io/pelican-eggs/installers:debian",
             "entrypoint": "bash"
         }
@@ -48,7 +48,7 @@
                 "boolean",
                 "required"
             ],
-            "sort": 3
+            "sort": 4
         },
         {
             "name": "Allow OP",
@@ -61,7 +61,7 @@
                 "boolean",
                 "required"
             ],
-            "sort": 1
+            "sort": 2
         },
         {
             "name": "Asset Pack",
@@ -75,7 +75,7 @@
                 "regex:/^([\\w\\d._-]+)(\\.zip)$/",
                 "nullable"
             ],
-            "sort": 2
+            "sort": 3
         },
         {
             "name": "Auth Mode",
@@ -89,7 +89,7 @@
                 "string",
                 "in:authenticated,offline"
             ],
-            "sort": 4
+            "sort": 5
         },
         {
             "name": "Automatic Update",
@@ -102,7 +102,7 @@
                 "required",
                 "boolean"
             ],
-            "sort": 10
+            "sort": 11
         },
         {
             "name": "Backup Directory",
@@ -115,7 +115,7 @@
                 "required",
                 "string"
             ],
-            "sort": 6
+            "sort": 7
         },
         {
             "name": "Backup Frequency",
@@ -129,7 +129,7 @@
                 "required",
                 "min:1"
             ],
-            "sort": 7
+            "sort": 8
         },
         {
             "name": "Disable Sentry Crash Reporting",
@@ -142,7 +142,7 @@
                 "boolean",
                 "required"
             ],
-            "sort": 9
+            "sort": 10
         },
         {
             "name": "Enable Backups",
@@ -155,7 +155,20 @@
                 "boolean",
                 "required"
             ],
-            "sort": 5
+            "sort": 6
+        },
+        {
+            "name": "Game Profile (username)",
+            "description": "Specify which Hytale profile should be used for server authentication.\n\nHow to find your profile username:\n1. Visit https://accounts.hytale.com/\n2. Click \"Game Profiles\" in the left side menu\n3. Copy the username of the profile you want to use\n4. Paste it into this field\n\nLeave empty to use your default/first profile automatically.",
+            "env_variable": "GAME_PROFILE",
+            "default_value": "",
+            "user_viewable": true,
+            "user_editable": true,
+            "rules": [
+                "nullable",
+                "string"
+            ],
+            "sort": 1
         },
         {
             "name": "JVM Arguments",
@@ -168,7 +181,7 @@
                 "string",
                 "nullable"
             ],
-            "sort": 11
+            "sort": 12
         },
         {
             "name": "Leverage Ahead-Of-Time Cache",
@@ -181,7 +194,7 @@
                 "required",
                 "boolean"
             ],
-            "sort": 8
+            "sort": 9
         }
     ]
 }
