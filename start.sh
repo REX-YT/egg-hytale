@@ -45,6 +45,22 @@ fi
 
 JAVA_CMD="${JAVA_CMD} --auth-mode ${AUTH_MODE}"
 
+if [ -n "${LOGGER_LEVEL}" ]; then
+    JAVA_CMD="${JAVA_CMD} --log ${LOGGER_LEVEL}"
+fi
+
+if [ "${VALIDATE_WORLD_GENERATION}" = "1" ]; then
+    JAVA_CMD="${JAVA_CMD} --validate-world-gen"
+fi
+
+if [ "${VALIDATE_ASSETS}" = "1" ]; then
+    JAVA_CMD="${JAVA_CMD} --validate-assets"
+fi
+
+if [ -n "${VALIDATE_PREFABS}" ]; then
+    JAVA_CMD="${JAVA_CMD} --validate-prefabs ${VALIDATE_PREFABS}"
+fi
+
 # Add allow-op flag if variable is set
 if [ "${ALLOW_OP}" = "1" ]; then
     JAVA_CMD="${JAVA_CMD} --allow-op"
@@ -81,4 +97,5 @@ JAVA_CMD="${JAVA_CMD} --owner-uuid ${PROFILE_UUID}"
 JAVA_CMD="${JAVA_CMD} --bind 0.0.0.0:${SERVER_PORT}"
 
 # Execute the command
+echo $JAVA_CMD
 eval $JAVA_CMD
