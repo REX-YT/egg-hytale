@@ -44,10 +44,28 @@ When a new version of the egg is released, follow these steps to update:
 
 ### Pelican Panel
 
-1. Download the latest [egg-hytale.pelican.json](egg-hytale.pelican.json) file from this repository
-2. In your Pelican Panel, navigate to **Admin Panel** > **Eggs**
-3. Click the "Hytale" egg from the list
-4. Click **Import** on top right and select the downloaded JSON file
+**Important:** Pelican cannot update eggs that have active servers. Choose one of these methods:
+
+#### Method 1: Full Reinstall
+
+1. **Backup your server files** - Download all important data from `/home/container`
+2. **Delete all servers** using the Hytale egg
+3. **Delete the old egg** from **Admin Panel** > **Eggs**
+4. Download the latest [egg-hytale.pelican.json](egg-hytale.pelican.json) file from this repository
+5. **Import the new egg** via **Admin Panel** > **Eggs** > **Import**
+6. **Recreate your servers** and restore your backed-up files
+
+#### Method 2: Manual Update (Advanced)
+
+1. Download the latest [egg-hytale.pelican.json](egg-hytale.pelican.json) file
+2. Open both the new egg file and your current egg in a text editor
+3. Compare the files and manually copy changes to your egg:
+   - Navigate to **Admin Panel** > **Eggs** > Click on the Hytale egg
+   - Update **Docker Images**, **Startup Command**, **Configuration Files**, and **Variables** sections
+   - Pay special attention to new variables or changed default values
+4. Save changes and restart your servers
+
+> **Note:** Method 2 requires careful attention to avoid configuration errors. Always backup before making changes.
 
 ### Pterodactyl Panel
 
