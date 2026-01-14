@@ -4,7 +4,7 @@
         "version": "PLCN_v3",
         "update_url": "https://cdn.nat.gg/egg/egg-hytale.pelican.json"
     },
-    "exported_at": "2026-01-14T00:17:15+00:00",
+    "exported_at": "2026-01-14T00:44:52+00:00",
     "name": "Hytale",
     "author": "contact@natroutter.fi",
     "uuid": "6594b287-2d7b-4249-bc93-4d40283c57e3",
@@ -161,7 +161,7 @@
             "name": "JVM Arguments",
             "description": "Additional Java Virtual Machine arguments for advanced configuration.\n\nWarning: Improper JVM settings can lead to poor performance, crashes, or failure to start. Only modify if you understand what these parameters do.",
             "env_variable": "JVM_ARGS",
-            "default_value": "-XX:+UseG1GC -XX:+ParallelRefProcEnabled -XX:MaxGCPauseMillis=200 -XX:+UnlockExperimentalVMOptions -XX:+DisableExplicitGC -XX:G1NewSizePercent=30 -XX:G1MaxNewSizePercent=40 -XX:G1HeapRegionSize=8M -XX:G1ReservePercent=20 -XX:G1HeapWastePercent=5 -XX:G1MixedGCCountTarget=4 -XX:InitiatingHeapOccupancyPercent=15 -XX:G1MixedGCLiveThresholdPercent=90 -XX:SurvivorRatio=32 -XX:+PerfDisableSharedMem -XX:MaxTenuringThreshold=1",
+            "default_value": "-XX:+UseZGC -XX:+UseCompactObjectHeaders -XX:-ZUncommit -XX:+UseStringDeduplication",
             "user_viewable": true,
             "user_editable": true,
             "rules": [
