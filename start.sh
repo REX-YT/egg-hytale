@@ -99,11 +99,6 @@ if [ -n "${IDENTITY_TOKEN}" ]; then
 else
     echo "Warning: IDENTITY_TOKEN is not set"
 fi
-if [ -n "${PROFILE_UUID}" ]; then
-    JAVA_CMD="${JAVA_CMD} --owner-uuid ${PROFILE_UUID}"
-else
-    echo "Warning: PROFILE_UUID is not set"
-fi
 
 # Add bind address
 JAVA_CMD="${JAVA_CMD} --bind 0.0.0.0:${SERVER_PORT}"

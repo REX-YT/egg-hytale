@@ -16,9 +16,8 @@
 
 DOWNLOAD_URL="https://downloader.hytale.com/hytale-downloader.zip"
 DOWNLOAD_FILE="hytale-downloader.zip"
+VERSION_FILE="version.txt"
 AUTH_CACHE_FILE=".hytale-auth-tokens.json"
-DOWNLOADER="./hytale-downloader-linux-amd64"
-USE_DOWNLOADER=1;
 
 # Detect architecture and set appropriate downloader binary
 ARCH=$(uname -m)
@@ -163,7 +162,7 @@ create_game_session() {
     SESSION_RESPONSE=$(curl -s -X POST "https://sessions.hytale.com/game-session/new" \
       -H "Authorization: Bearer $ACCESS_TOKEN" \
       -H "Content-Type: application/json" \
-      -d "{\"uuid\": \"${PROFILE_UUID}\"}")
+      -d "{\"uuid\": \"$PROFILE_UUID\"}")
 
     # Validate JSON response
     if ! echo "$SESSION_RESPONSE" | jq empty 2>/dev/null; then
@@ -188,6 +187,13 @@ create_game_session() {
 
 # Function to save authentication tokens (refresh_token + profile_uuid only)
 save_auth_tokens() {
+
+    # Create auth cache file (only in standard mode, not GSP mode)
+    if [ ! -f "$AUTH_CACHE_FILE" ]; then
+        echo "Creating auth cache file..."
+        touch $AUTH_CACHE_FILE
+    fi
+
     cat > "$AUTH_CACHE_FILE" << EOF
 {
   "refresh_token": "$REFRESH_TOKEN",
@@ -329,70 +335,75 @@ else
 fi
 chmod -R 755 /home/container/backup
 
-# Only proceed with downloader if on x86_64 architecture
-if [ "$USE_DOWNLOADER" = "1" ]; then
-    # Check if the downloader exists
-    if [ ! -f "$DOWNLOADER" ]; then
-        echo "Error: Hytale downloader not found!"
-        echo "Please run the installation script first."
+# Check if the downloader exists
+if [ ! -f "$DOWNLOADER" ]; then
+    echo "Error: Hytale downloader not found!"
+    echo "Please run the installation script first."
+    exit 1
+fi
+
+# Check if the downloader is executable
+if [ ! -x "$DOWNLOADER" ]; then
+    echo "Setting executable permissions..."
+    chmod +x "$DOWNLOADER"
+fi
+
+# Create version file
+if [ ! -f "$VERSION_FILE" ]; then
+    echo "Creating version check file..."
+    touch $VERSION_FILE
+fi
+
+INITIAL_SETUP=0
+
+# Check if credentials file exists, if not run the updater
+if [ ! -f ".hytale-downloader-credentials.json" ]; then
+    INITIAL_SETUP=1
+    echo "Credentials file not found, running initial setup..."
+    echo "Downloading server files..."
+
+    $DOWNLOADER -check-update
+
+    echo " "
+    echo "════════════════════════════════════════════════════════════════"
+    echo "  NOTE: You must have purchased Hytale on the account you are using to authenticate."
+    echo "════════════════════════════════════════════════════════════════"
+    echo " "
+
+    if ! $DOWNLOADER -patchline $PATCHLINE -download-path server.zip; then
+
+        echo ""
+        echo "Error: Failed to download Hytale server files."
+        echo "This may indicate:"
+        echo "  - You haven't purchased Hytale"
+        echo "  - Authentication credentials are invalid or expired"
+        echo ""
+
+        echo "Removing invalid credential file..."
+        rm -f .hytale-downloader-credentials.json
         exit 1
     fi
 
-    # Check if the downloader is executable
-    if [ ! -x "$DOWNLOADER" ]; then
-        echo "Setting executable permissions..."
-        chmod +x "$DOWNLOADER"
-    fi
+    extract_server_files
 
-    INITIAL_SETUP=0
+    # Save version info after initial setup
+    DOWNLOADER_VERSION=$($DOWNLOADER -print-version 2>&1)
 
-    # Check if credentials file exists, if not run the updater
-    if [ ! -f ".hytale-downloader-credentials.json" ]; then
-        INITIAL_SETUP=1
-        echo "Credentials file not found, running initial setup..."
-        echo "Downloading server files..."
-
-        $DOWNLOADER -check-update
-
-        echo " "
-        echo "════════════════════════════════════════════════════════════════"
-        echo "  NOTE: You must have purchased Hytale on the account you are using to authenticate."
-        echo "════════════════════════════════════════════════════════════════"
-        echo " "
-
-        if ! $DOWNLOADER -patchline $PATCHLINE -download-path server.zip; then
-            echo ""
-            echo "Error: Failed to download Hytale server files."
-            echo "This may indicate:"
-            echo "  - You haven't purchased Hytale"
-            echo "  - Authentication credentials are invalid or expired"
-            echo ""
-            echo "Removing invalid credential file..."
-            rm -f .hytale-downloader-credentials.json
-            exit 1
-        fi
-
-        extract_server_files
-
-        # Save version info after initial setup
-        DOWNLOADER_VERSION=$($DOWNLOADER -print-version 2>&1)
-
-        if [ $? -eq 0 ] && [ -n "$DOWNLOADER_VERSION" ]; then
-            echo "$DOWNLOADER_VERSION" > version.txt
-            echo "✓ Saved version info to version.txt!"
-        fi
+    if [ $? -eq 0 ] && [ -n "$DOWNLOADER_VERSION" ]; then
+        echo "$DOWNLOADER_VERSION" > $VERSION_FILE
+        echo "✓ Saved version info!"
     fi
 fi
 
-# Run automatic update if enabled (only on x86_64)
-if [ "$USE_DOWNLOADER" = "1" ] && [ "${AUTOMATIC_UPDATE}" = "1" ] && [ "${INITIAL_SETUP}" = "0" ]; then
+# Run automatic update if enabled
+if [ "$AUTOMATIC_UPDATE" = "1" ] && [ "$INITIAL_SETUP" = "0" ]; then
     echo "Checking for updates..."
 
     # Read local version from file
-    if [ -f "version.txt" ]; then
-        LOCAL_VERSION=$(cat version.txt)
+    if [ -f "$VERSION_FILE" ]; then
+        LOCAL_VERSION=$(cat $VERSION_FILE)
     else
-        echo "version.txt not found, forcing update"
+        echo "version file not found, forcing update"
         LOCAL_VERSION=""
     fi
 
@@ -416,9 +427,9 @@ if [ "$USE_DOWNLOADER" = "1" ] && [ "${AUTOMATIC_UPDATE}" = "1" ] && [ "${INITIA
             $DOWNLOADER -patchline $PATCHLINE -download-path server.zip
             extract_server_files
 
-            # Update version.txt after successful update
-            echo "$DOWNLOADER_VERSION" > version.txt
-            echo "✓ Saved version info to version.txt!"
+            # Update version file after successful update
+            echo "$DOWNLOADER_VERSION" > $VERSION_FILE
+            echo "✓ Saved version info!"
         else
             echo "⨯ Versions match, skipping update"
         fi
@@ -433,7 +444,7 @@ if [ ! -f "HytaleServer.jar" ]; then
 fi
 
 # Download the latest hytale-sourcequery plugin if enabled
-if [ "${ENABLE_SOURCE_QUERY_SUPPORT}" = "1" ]; then
+if [ "$ENABLE_SOURCE_QUERY_SUPPORT" = "1" ]; then
     echo "Source Query support enabled, checking for plugin..."
 
     # Create mods directory if it doesn't exist
@@ -458,31 +469,37 @@ if [ "${ENABLE_SOURCE_QUERY_SUPPORT}" = "1" ]; then
     fi
 fi
 
-# Check for cached authentication tokens
-if check_cached_tokens && load_cached_tokens; then
-    echo "Using cached authentication..."
-    if refresh_access_token; then
-        # Update cache in case refresh token rotated
-        save_auth_tokens
-        # Create fresh game session
-        if ! create_game_session; then
-            exit 1
+# Check if GSP mode (tokens provided externally)
+if [ -n "$OVERRIDE_SESSION_TOKEN" ] && [ -n "$OVERRIDE_IDENTITY_TOKEN" ]; then
+    echo "Using provided session and identity tokens..."
+    SESSION_TOKEN="$OVERRIDE_SESSION_TOKEN"
+    IDENTITY_TOKEN="$OVERRIDE_IDENTITY_TOKEN"
+else
+    # Standard mode: perform authentication
+    if check_cached_tokens && load_cached_tokens; then
+        echo "Using cached authentication..."
+        if refresh_access_token; then
+            # Update cache in case refresh token rotated
+            save_auth_tokens
+            # Create fresh game session
+            if ! create_game_session; then
+                exit 1
+            fi
+        else
+            # Refresh failed, need full re-auth
+            echo "Refresh token expired, re-authenticating..."
+            rm -f "$AUTH_CACHE_FILE"
+            perform_authentication
         fi
     else
-        # Refresh failed, need full re-auth
-        echo "Refresh token expired, re-authenticating..."
-        rm -f "$AUTH_CACHE_FILE"
+        # Perform full authentication if no valid cache exists
         perform_authentication
     fi
-else
-    # Perform full authentication if no valid cache exists
-    perform_authentication
 fi
 
 # Export the session tokens so they're available to start.sh
 export SESSION_TOKEN
 export IDENTITY_TOKEN
-export PROFILE_UUID
 
 # Now call the pterodactyl entrypoint which will execute start.sh
 exec /bin/bash /entrypoint.sh
