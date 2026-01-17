@@ -73,7 +73,7 @@ if [ -n "$OVERRIDE_SESSION_TOKEN" ] && [ -n "$OVERRIDE_IDENTITY_TOKEN" ]; then
     logger info "Using provided session and identity tokens..."
     SESSION_TOKEN="$OVERRIDE_SESSION_TOKEN"
     IDENTITY_TOKEN="$OVERRIDE_IDENTITY_TOKEN"
-else
+else if [ "${UNENCRYPTED_AUTH_SESSION}" = "1" ]; then
     # Standard mode: perform authentication
     if check_cached_tokens && load_cached_tokens; then
         logger info "Using cached authentication..."

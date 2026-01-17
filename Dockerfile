@@ -42,6 +42,34 @@ COPY --chmod=755 ./entrypoint.sh /entrypoint.sh
 # Strip Windows line endings (\r) just in case the file was edited on Windows
 RUN sed -i 's/\r$//' /entrypoint.sh
 
+# Create dmidecode shim for Docker usage
+RUN echo "Creating local dmidecode for Docker usage." && \
+    cat > /usr/local/bin/dmidecode << 'EOF'
+#!/bin/sh
+if [ "$1" = "-s" ] && [ "$2" = "system-uuid" ]; then
+    UUID_FILE="$HOME/.hytale_system_uuid"
+
+    if [ -f "$UUID_FILE" ]; then
+        cat "$UUID_FILE"
+    else
+        if command -v uuidgen >/dev/null 2>&1; then
+            uuidgen | tr "A-Z" "a-z" | tee "$UUID_FILE" >/dev/null
+        else
+            cat /proc/sys/kernel/random/uuid | tee "$UUID_FILE" >/dev/null
+        fi
+        cat "$UUID_FILE"
+    fi
+
+    printf "\n"
+    exit 0
+fi
+
+echo "dmidecode shim: unsupported args: $*" >&2
+exit 1
+EOF
+RUN chmod +x /usr/local/bin/dmidecode
+RUN sed -i 's/\r$//' /entrypoint.sh
+
 # Copy lib directory
 COPY --chmod=755 ./lib /lib
 RUN sed -i 's/\r$//' /lib/*.sh
