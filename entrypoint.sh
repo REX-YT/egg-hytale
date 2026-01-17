@@ -39,6 +39,22 @@ case "$ARCH" in
         ;;
 esac
 
+# Get and export timezone
+TZ=${TZ:-UTC}
+export TZ
+
+# Get and export the internal docker ip
+INTERNAL_IP=$(ip route get 1 | awk '{print $(NF-2);exit}')
+export INTERNAL_IP
+
+# Goto working directory
+cd /home/container || exit 1
+
+#Print java version
+echo " "
+java -version
+echo " "
+
 # Function to extract downloaded server files
 extract_server_files() {
     echo "Extracting server files..."
@@ -540,5 +556,6 @@ if [ "$ENFORCE_PERMISSIONS" = "1" ]; then
     echo "✓ Permissions enforced (files: 644, folders: 755)"
 fi
 
-# Now call the pterodactyl entrypoint which will execute start.sh
-exec /bin/bash /entrypoint.sh
+# Convert startup variables to from {{VARIABLE}} to ${VARIABLE} for the evaluating
+PARSED=$(echo "$STARTUP" | sed -e 's/{{/${/g' -e 's/}}/}/g')
+eval "$PARSED"

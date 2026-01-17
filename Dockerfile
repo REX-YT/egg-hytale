@@ -1,31 +1,57 @@
-FROM --platform=$TARGETOS/$TARGETARCH ghcr.io/parkervcp/yolks:java_25
+# Use Eclipse Temurin JDK 25 on Ubuntu Noble as the base image
+FROM --platform=$TARGETOS/$TARGETARCH eclipse-temurin:25-jdk-noble
 
+# Metadata
 LABEL author="NATroutter" maintainer="contact@natroutter.fi"
 LABEL org.opencontainers.image.source="https://github.com/NATroutter/egg-hytale"
 LABEL org.opencontainers.image.description="Container for running hytale game servers"
 LABEL org.opencontainers.image.licenses=MIT
 
-# Work as root for setup
+# Switch to root user for installation
 USER root
 
-# Copy Pterodactyl entrypoint
-COPY --from=ghcr.io/parkervcp/yolks:java_25 --chmod=755 /entrypoint.sh /entrypoint.sh
-
-# Install dependencies
-RUN apt update -y && apt install -y unzip jq curl && rm -rf /var/lib/apt/lists/*
-
-# Copy entry.sh as root-owned (so container user can't modify it)
-COPY --chmod=755 ./entry.sh /entry.sh
-RUN sed -i 's/\r$//' /entry.sh
+# Install necessary dependencies
+RUN apt update -y \
+	&& apt install -y \
+	curl \
+	lsof \
+	ca-certificates \
+	openssl \
+	git \
+	tar \
+	sqlite3 \
+	fontconfig \
+	tzdata \
+	iproute2 \
+	libfreetype6 \
+	tini \
+	zip \
+	unzip \
+	jq
 
 # Copy start.sh to /usr/local/bin (protected location, won't be overridden by volume mounts)
 COPY --chmod=755 ./start.sh /usr/local/bin/start.sh
+
+# Strip Windows line endings (\r) just in case the file was edited on Windows
 RUN sed -i 's/\r$//' /usr/local/bin/start.sh
 
-# Switch to container user ONLY for runtime
-USER container
-ENV USER=container HOME=/home/container
-WORKDIR /home/container
+# Copy entrypoint script to root
+COPY --chmod=755 ./entrypoint.sh /entrypoint.sh
 
-#Start the container
-CMD ["/bin/bash", "/entry.sh"]
+# Strip Windows line endings (\r) just in case the file was edited on Windows
+RUN sed -i 's/\r$//' /entrypoint.sh
+
+# Create the container user
+RUN useradd -m -d /home/container -s /bin/bash container
+
+# Switch to the container user
+USER        container
+ENV         USER=container HOME=/home/container
+WORKDIR     /home/container
+
+# Ensure clean shutdown
+STOPSIGNAL SIGINT
+
+# Use tini as init process to handle signals correctly
+ENTRYPOINT    ["/usr/bin/tini", "-g", "--"]
+CMD         ["/entrypoint.sh"]
