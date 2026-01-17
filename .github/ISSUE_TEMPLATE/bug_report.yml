@@ -104,4 +104,4 @@ body:
         - label: I have verified that I own Hytale on the account I'm using for authentication
           required: true
         - label: I am using the latest version of the egg
-          required: true
+          required: false
