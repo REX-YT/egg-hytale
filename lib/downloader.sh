@@ -39,7 +39,7 @@ run_update_process() {
         fi
 
         # Save version info after initial setup
-        local DOWNLOADER_VERSION=$($DOWNLOADER -print-version 2>&1)
+        local DOWNLOADER_VERSION=$($DOWNLOADER -print-version -skip-update-check 2>&1)
         if [ $? -eq 0 ] && [ -n "$DOWNLOADER_VERSION" ]; then
             echo "$DOWNLOADER_VERSION" > $VERSION_FILE
             logger success "Saved version info!"
@@ -59,7 +59,7 @@ run_update_process() {
             logger warn "Version file not found, forcing update"
         fi
 
-        local DOWNLOADER_VERSION=$($DOWNLOADER -print-version 2>&1)
+        local DOWNLOADER_VERSION=$($DOWNLOADER -print-version -skip-update-check 2>&1)
 
         if [ $? -ne 0 ] || [ -z "$DOWNLOADER_VERSION" ]; then
             logger error "Failed to get downloader version."

@@ -4,7 +4,7 @@
         "version": "PTDL_v2",
         "update_url": "https:\/\/raw.githubusercontent.com\/NATroutter\/egg-hytale\/refs\/heads\/main\/egg-hytale.pterodactyl.json"
     },
-    "exported_at": "2026-01-17T14:47:33+02:00",
+    "exported_at": "2026-01-17T22:46:50+02:00",
     "name": "Hytale",
     "author": "contact@natroutter.fi",
     "description": "Hytale is a block-based sandbox game that blends creative building with RPG adventure. Explore procedurally generated worlds filled with unique biomes, dungeons, and creatures. Build anything from simple homes to grand castles, craft items, and battle monsters. Create custom content with built-in modding tools, host your own servers, and shape the experience with plugins and mods. Play solo or with friends in a world designed for both creation and exploration.\r\n\r\nCredits:\r\n- Made by NATroutter\r\n- https:\/\/natroutter.fi\r\n- https:\/\/github.com\/NATroutter",
@@ -151,7 +151,7 @@
             "field_type": "text"
         },
         {
-            "name": "Memory overhead",
+            "name": "Memory Overhead",
             "description": "The amount of RAM (in MB) kept aside for the system so the server doesn\u2019t use everything. Java will get the rest.",
             "env_variable": "MEMORY_OVERHEAD",
             "default_value": "0",
@@ -171,7 +171,7 @@
             "field_type": "text"
         },
         {
-            "name": "Boot commands",
+            "name": "Boot Commands",
             "description": "Comma-separated commands to run on server start (executed synchronously in order)",
             "env_variable": "BOOT_COMMANDS",
             "default_value": "",
@@ -181,7 +181,7 @@
             "field_type": "text"
         },
         {
-            "name": "Force network flush",
+            "name": "Force Network Flush",
             "description": "Forces the server to immediately send all pending network data to clients, bypassing normal buffering. This can reduce delays for critical updates but may slightly increase network usage.",
             "env_variable": "FORCE_NETWORK_FLUSH",
             "default_value": "0",
@@ -211,7 +211,7 @@
             "field_type": "text"
         },
         {
-            "name": "Require valid world generation",
+            "name": "Require Valid World Generation",
             "description": "Causes the server to exit with an error code if world gen is invalid.",
             "env_variable": "VALIDATE_WORLD_GENERATION",
             "default_value": "0",
@@ -221,7 +221,7 @@
             "field_type": "text"
         },
         {
-            "name": "Require valid prefabs",
+            "name": "Require Valid Prefabs",
             "description": "Forces the server to stop and exit with an error if any specified prefab types are invalid. Provide a comma-separated list of prefab categories (e.g. PHYSICS,BLOCKS,BLOCK_STATES,ENTITIES,BLOCK_FILLER) to check. Leave empty to skip validation.",
             "env_variable": "VALIDATE_PREFABS",
             "default_value": "",
@@ -231,7 +231,7 @@
             "field_type": "text"
         },
         {
-            "name": "Require valid assets",
+            "name": "Require Valid Assets",
             "description": "Causes the server to exit with an error code if assets are invalid.",
             "env_variable": "VALIDATE_ASSETS",
             "default_value": "0",
@@ -288,6 +288,16 @@
             "user_viewable": true,
             "user_editable": true,
             "rules": "required|boolean",
+            "field_type": "text"
+        },
+        {
+            "name": "Use Persistent Authentication",
+            "description": "Enabling this option activates the egg's built-in authentication and credentials storage system for the game. If disabled, it is assumed that you will use the game's own authentication system.",
+            "env_variable": "USE_PERSISTENT_AUTHENTICATION",
+            "default_value": "ENABLED",
+            "user_viewable": true,
+            "user_editable": true,
+            "rules": "required|string|in:ENABLED,DISABLED",
             "field_type": "text"
         }
     ]

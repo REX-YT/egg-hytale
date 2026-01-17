@@ -13,13 +13,31 @@ Both Pelican Panel and Pterodactyl Panel are fully supported with dedicated egg 
 
 ## Features
 
-- Automated Hytale server installation
-- Automatic download of server files from official sources
-- Configurable server parameters
-- Easy setup and deployment
+- Automated Hytale server installation and updates
+- Multi-architecture support (x86_64 & ARM64)
+- Automatic `hytale-sourcequery` plugin installation
+- Built-in server validation tools (World, Assets, Prefabs)
+- Performance optimizations via AOT Cache support
+- Configurable server parameters and JVM arguments
+- Integrated backup management system
+- Multiple authentication modes (Standard & GSP)
 - Support for custom asset packs
-- Backup management
-- Multiple authentication modes
+
+## System Requirements
+
+| Component | Minimum | Recommended |
+| --------- | ------- | ----------- |
+| RAM       | 8 GB    | 16 GB+       |
+| CPU       | Intel Core i5-7500 (or equivalent), AMD Ryzen 3 1200 (or equivalent) | Intel Core i5-10400 (or equivalent), AMD Ryzen 5 3600 (or equivalent) |
+| Storage   | 10 GB   | 20 GB+      |
+
+## Ports
+
+| Port | Protocol | Description |
+| ---- | -------- | ----------- |
+| 5520 | UDP | Game Server Port (Default) |
+| 5521 | TCP | Query (Optional) |
+
 
 ## Installation
 
@@ -132,6 +150,7 @@ This project is licensed under the MIT License - see the LICENSE file for detail
 
 - Hytale team for the game and server software
 - Pelican Panel and Pterodactyl Panel for the hosting platforms
+- [physgun-com](https://github.com/physgun-com) for the [hytale-sourcequery](https://github.com/physgun-com/hytale-sourcequery) plugin
 - Community contributors
 
 ## Links

@@ -1,12 +1,13 @@
 #!/bin/bash
-source "$(dirname "$0")/lib/utilities.sh"
-source "$(dirname "$0")/lib/authentication.sh"
-source "$(dirname "$0")/lib/system.sh"
-source "$(dirname "$0")/lib/downloader.sh"
-source "$(dirname "$0")/lib/plugins.sh"
+source "/egg-hytale/lib/utilities.sh"
+source "/egg-hytale/lib/authentication.sh"
+source "/egg-hytale/lib/system.sh"
+source "/egg-hytale/lib/downloader.sh"
+source "/egg-hytale/lib/plugins.sh"
 
 DOWNLOAD_URL="https://downloader.hytale.com/hytale-downloader.zip"
 DOWNLOAD_FILE="hytale-downloader.zip"
+DOWNLOADER_DIR="/egg-hytale/downloader"
 DOWNLOAD_CRED_FILE=".hytale-downloader-credentials.json"
 AUTH_CACHE_FILE=".hytale-auth-tokens.json"
 VERSION_FILE="version.txt"
@@ -51,31 +52,39 @@ run_update_process
 validate_server_files
 install_sourcequery
 
+
 # Check if GSP mode (tokens provided externally)
 if [ -n "$OVERRIDE_SESSION_TOKEN" ] && [ -n "$OVERRIDE_IDENTITY_TOKEN" ]; then
     logger info "Using provided session and identity tokens..."
     SESSION_TOKEN="$OVERRIDE_SESSION_TOKEN"
     IDENTITY_TOKEN="$OVERRIDE_IDENTITY_TOKEN"
 else
-    # Standard mode: perform authentication
-    if check_cached_tokens && load_cached_tokens; then
-        logger info "Using cached authentication..."
-        if refresh_access_token; then
-            # Update cache in case refresh token rotated
-            save_auth_tokens
-            # Create fresh game session
-            if ! create_game_session; then
-                exit 1
+    # Default to persistent authentication if not specified
+    if [ -z "$USE_PERSISTENT_AUTHENTICATION" ]; then
+        USE_PERSISTENT_AUTHENTICATION="ENABLED"
+    fi
+
+    if [ "$USE_PERSISTENT_AUTHENTICATION" = "ENABLED" ]; then
+        # Standard mode: perform authentication
+        if check_cached_tokens && load_cached_tokens; then
+            logger info "Using cached authentication..."
+            if refresh_access_token; then
+                # Update cache in case refresh token rotated
+                save_auth_tokens
+                # Create fresh game session
+                if ! create_game_session; then
+                    exit 1
+                fi
+            else
+                # Refresh failed, need full re-auth
+                logger info "Refresh token expired, re-authenticating..."
+                rm -f "$AUTH_CACHE_FILE"
+                perform_authentication
             fi
         else
-            # Refresh failed, need full re-auth
-            logger info "Refresh token expired, re-authenticating..."
-            rm -f "$AUTH_CACHE_FILE"
+            # Perform full authentication if no valid cache exists
             perform_authentication
         fi
-    else
-        # Perform full authentication if no valid cache exists
-        perform_authentication
     fi
 fi
 
