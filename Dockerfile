@@ -27,6 +27,7 @@ RUN apt update -y \
 	tini \
 	zip \
 	unzip \
+	ncurses-bin \
 	jq
 
 # Copy start.sh to /usr/local/bin (protected location, won't be overridden by volume mounts)

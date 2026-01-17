@@ -23,7 +23,7 @@ MODS_FOLDER="mods"
 
 # Detect architecture and set appropriate downloader binary
 ARCH=$(uname -m)
-echo "Platform: $ARCH"
+logger info "Platform: $ARCH"
 
 case "$ARCH" in
     x86_64)
@@ -33,8 +33,8 @@ case "$ARCH" in
         DOWNLOADER="./hytale-downloader-linux-arm64"
         ;;
     *)
-        echo "Error: Unsupported architecture: $ARCH"
-        echo "Supported architectures: x86_64 (amd64), aarch64/arm64"
+        logger error "Unsupported architecture: $ARCH"
+        logger info "Supported architectures: x86_64 (amd64), aarch64/arm64"
         exit 1
         ;;
 esac
@@ -55,38 +55,85 @@ echo " "
 java -version
 echo " "
 
+# Setup colors
+RED="" GREEN="" YELLOW="" BLUE="" MAGENTA="" CYAN="" RESET=""
+if [ -t 1 ] || { [ -n "$TERM" ] && [ "$TERM" != "dumb" ]; }; then
+    # Helper to get color code (tput or ANSI fallback)
+    if command -v tput >/dev/null 2>&1 && tput setaf 1 >/dev/null 2>&1; then
+        _c() { tput setaf "$1"; }
+        _r() { tput sgr0; }
+    else
+        _c() { printf '\033[0;3%dm' "$1"; }
+        _r() { printf '\033[0m'; }
+    fi
+
+    RED=$(_c 1) GREEN=$(_c 2) YELLOW=$(_c 3)
+    BLUE=$(_c 4) MAGENTA=$(_c 5) CYAN=$(_c 6)
+    RESET=$(_r)
+    unset -f _c _r
+fi
+
+#Function to print colored text
+printc() {
+    local text="$1"
+
+    # Replace tags with color codes (or empty string if not supported)
+    text="${text//\{RED\}/$RED}"
+    text="${text//\{GREEN\}/$GREEN}"
+    text="${text//\{YELLOW\}/$YELLOW}"
+    text="${text//\{BLUE\}/$BLUE}"
+    text="${text//\{MAGENTA\}/$MAGENTA}"
+    text="${text//\{CYAN\}/$CYAN}"
+    text="${text//\{RESET\}/$RESET}"
+    printf "%b\n" "$text"
+}
+
+# Logger function to print messages with different colors based on level
+logger() {
+    local level="$1"
+    local message="$2"
+
+    case "${level^^}" in
+        "INFO")    printc "{BLUE}ℹ $message{RESET}" ;;
+        "WARN")    printc "{YELLOW}⚠ $message{RESET}" ;;
+        "ERROR")   printc "{RED}⨯ $message{RESET}" ;;
+        "SUCCESS") printc "{GREEN}✓ $message{RESET}" ;;
+        *)         printc "$message" ;;
+    esac
+}
+
 # Function to extract downloaded server files
 extract_server_files() {
-    echo "Extracting server files..."
+    logger info "Extracting server files..."
     SERVER_ZIP="server.zip"
 
     if [ -f "$SERVER_ZIP" ]; then
-        echo "✓ Found server archive: $SERVER_ZIP"
+        logger success "Found server archive: $SERVER_ZIP"
 
         # Extract to current directory
         unzip -o "$SERVER_ZIP"
 
         if [ $? -ne 0 ]; then
-            echo "Error: Failed to extract $SERVER_ZIP"
+            logger error "Failed to extract $SERVER_ZIP"
             exit 1
         fi
 
-        echo "✓ Extraction completed successfully."
+        logger success "Extraction completed successfully."
 
         # Move contents from Server folder to current directory
         if [ -d "Server" ]; then
-            echo "Moving server files from Server directory..."
-            mv -f Server/* .
+            logger info "Moving server files from Server directory..."
+            cp -rf Server/* .
             rm -rf ./Server
-            echo "✓ Server files moved to root directory."
+            logger success "Server files moved to root directory."
         fi
 
         # Clean up the zip file
-        echo "Cleaning up archive file..."
+        logger info "Cleaning up archive file..."
         rm "$SERVER_ZIP"
-        echo "✓ Archive removed."
+        logger success "Archive removed."
     else
-        echo "Error: Server archive not found at $SERVER_ZIP"
+        logger error "Server archive not found at $SERVER_ZIP"
         exit 1
     fi
 }
@@ -96,13 +143,13 @@ check_cached_tokens() {
     if [ -f "$AUTH_CACHE_FILE" ]; then
         # Check if jq is available
         if ! command -v jq &> /dev/null; then
-            echo "Warning: jq not found, cannot use cached tokens"
+            logger warn "jq not found, cannot use cached tokens"
             return 1
         fi
 
         # Validate JSON format
         if ! jq empty "$AUTH_CACHE_FILE" 2>/dev/null; then
-            echo "Warning: Invalid cached token file, removing..."
+            logger warn "Invalid cached token file, removing..."
             rm "$AUTH_CACHE_FILE"
             return 1
         fi
@@ -112,12 +159,12 @@ check_cached_tokens() {
         PROFILE_UUID_EXISTS=$(jq -r 'has("profile_uuid")' "$AUTH_CACHE_FILE")
 
         if [ "$REFRESH_TOKEN_EXISTS" != "true" ] || [ "$PROFILE_UUID_EXISTS" != "true" ]; then
-            echo "Warning: Cached token file missing required keys, removing..."
+            logger warn "Cached token file missing required keys, removing..."
             rm "$AUTH_CACHE_FILE"
             return 1
         fi
 
-        echo "✓ Found cached authentication tokens"
+        logger success "Found cached authentication tokens"
         return 0
     fi
     return 1
@@ -131,18 +178,18 @@ load_cached_tokens() {
     # Validate required tokens are present
     if [ -z "$REFRESH_TOKEN" ] || [ "$REFRESH_TOKEN" = "null" ] || \
        [ -z "$PROFILE_UUID" ] || [ "$PROFILE_UUID" = "null" ]; then
-        echo "Error: Incomplete cached tokens, re-authenticating..."
+        logger error "Incomplete cached tokens, re-authenticating..."
         rm "$AUTH_CACHE_FILE"
         return 1
     fi
 
-    echo "✓ Loaded cached refresh token + profile UUID"
+    logger success "Loaded cached refresh token + profile UUID"
     return 0
 }
 
 # Function to refresh access token using cached refresh token
 refresh_access_token() {
-    echo "Refreshing access token..."
+    logger info "Refreshing access token..."
 
     TOKEN_RESPONSE=$(curl -s -X POST "https://oauth.accounts.hytale.com/oauth2/token" \
       -H "Content-Type: application/x-www-form-urlencoded" \
@@ -152,7 +199,7 @@ refresh_access_token() {
 
     ERROR=$(echo "$TOKEN_RESPONSE" | jq -r '.error // empty')
     if [ -n "$ERROR" ]; then
-        echo "Error: Failed to refresh access token: $ERROR"
+        logger error "Failed to refresh access token: $ERROR"
         return 1
     fi
 
@@ -160,7 +207,7 @@ refresh_access_token() {
     NEW_REFRESH_TOKEN=$(echo "$TOKEN_RESPONSE" | jq -r '.refresh_token // empty')
 
     if [ -z "$ACCESS_TOKEN" ] || [ "$ACCESS_TOKEN" = "null" ]; then
-        echo "Error: No access token in refresh response"
+        logger error "No access token in refresh response"
         return 1
     fi
 
@@ -169,13 +216,13 @@ refresh_access_token() {
         REFRESH_TOKEN="$NEW_REFRESH_TOKEN"
     fi
 
-    echo "✓ Access token refreshed"
+    logger success "Access token refreshed"
     return 0
 }
 
 # Function to create a new game session
 create_game_session() {
-    echo "Creating game server session..."
+    logger info "Creating game server session..."
 
     SESSION_RESPONSE=$(curl -s -X POST "https://sessions.hytale.com/game-session/new" \
       -H "Authorization: Bearer $ACCESS_TOKEN" \
@@ -184,8 +231,8 @@ create_game_session() {
 
     # Validate JSON response
     if ! echo "$SESSION_RESPONSE" | jq empty 2>/dev/null; then
-        echo "Error: Invalid JSON response from game session creation"
-        echo "Response: $SESSION_RESPONSE"
+        logger error "Invalid JSON response from game session creation"
+        logger info "Response: $SESSION_RESPONSE"
         return 1
     fi
 
@@ -194,12 +241,12 @@ create_game_session() {
     IDENTITY_TOKEN=$(echo "$SESSION_RESPONSE" | jq -r '.identityToken')
 
     if [ -z "$SESSION_TOKEN" ] || [ "$SESSION_TOKEN" = "null" ]; then
-        echo "Error: Failed to create game server session"
-        echo "Response: $SESSION_RESPONSE"
+        logger error "Failed to create game server session"
+        logger info "Response: $SESSION_RESPONSE"
         return 1
     fi
 
-    echo "✓ Game server session created successfully!"
+    logger success "Game server session created successfully!"
     return 0
 }
 
@@ -208,7 +255,7 @@ save_auth_tokens() {
 
     # Create auth cache file (only in standard mode, not GSP mode)
     if [ ! -f "$AUTH_CACHE_FILE" ]; then
-        echo "Creating auth cache file..."
+        logger info "Creating auth cache file..."
         touch $AUTH_CACHE_FILE
     fi
 
@@ -219,12 +266,12 @@ save_auth_tokens() {
   "timestamp": $(date +%s)
 }
 EOF
-    echo "✓ Refresh token cached for future use"
+    logger info "Refresh token cached for future use"
 }
 
 # Function to perform full authentication
 perform_authentication() {
-    echo "Obtaining authentication tokens..."
+    logger info "Obtaining authentication tokens..."
 
     # Step 1: Request device code
     AUTH_RESPONSE=$(curl -s -X POST "https://oauth.accounts.hytale.com/oauth2/device/auth" \
@@ -239,22 +286,22 @@ perform_authentication() {
 
     # Display authentication banner
     echo " "
-    echo "╔═════════════════════════════════════════════════════════════════════════════╗"
-    echo "║                       HYTALE SERVER AUTHENTICATION REQUIRED                 ║"
-    echo "╠═════════════════════════════════════════════════════════════════════════════╣"
-    echo "║                                                                             ║"
-    echo "║  Please authenticate the server by visiting the following URL:              ║"
-    echo "║                                                                             ║"
-    echo "║  $VERIFICATION_URI  ║"
-    echo "║                                                                             ║"
-    echo "║  1. Click the link above or copy it to your browser                         ║"
-    echo "║  2. Sign in with your Hytale account                                        ║"
-    echo "║  3. Authorize the server                                                    ║"
-    echo "║                                                                             ║"
-    echo "║  Waiting for authentication...                                              ║"
-    echo "║                                                                             ║"
-    echo "╚═════════════════════════════════════════════════════════════════════════════╝"
-    echo " "
+    printc "{MAGENTA}╔═════════════════════════════════════════════════════════════════════════════╗"
+    printc "{MAGENTA}║                       {BLUE}HYTALE SERVER AUTHENTICATION REQUIRED                 {MAGENTA}║"
+    printc "{MAGENTA}╠═════════════════════════════════════════════════════════════════════════════╣"
+    printc "{MAGENTA}║                                                                             ║"
+    printc "{MAGENTA}║  {CYAN}Please authenticate the server by visiting the following URL:              {MAGENTA}║"
+    printc "{MAGENTA}║                                                                             ║"
+    printc "{MAGENTA}║  {YELLOW}$VERIFICATION_URI  {MAGENTA}║"
+    printc "{MAGENTA}║                                                                             ║"
+    printc "{MAGENTA}║  {CYAN}1. Click the link above or copy it to your browser                         {MAGENTA}║"
+    printc "{MAGENTA}║  {CYAN}2. Sign in with your Hytale account                                        {MAGENTA}║"
+    printc "{MAGENTA}║  {CYAN}3. Authorize the server                                                    {MAGENTA}║"
+    printc "{MAGENTA}║                                                                             ║"
+    printc "{MAGENTA}║  {CYAN}Waiting for authentication...                                              {MAGENTA}║"
+    printc "{MAGENTA}║                                                                             ║"
+    printc "{MAGENTA}╚═════════════════════════════════════════════════════════════════════════════╝"
+    printc " "
 
     # Step 2: Poll for access token
     ACCESS_TOKEN=""
@@ -271,23 +318,23 @@ perform_authentication() {
         ERROR=$(echo "$TOKEN_RESPONSE" | jq -r '.error // empty')
 
         if [ "$ERROR" = "authorization_pending" ]; then
-            echo "Still waiting for authentication..."
+            logger info "Still waiting for authentication..."
             continue
         elif [ -n "$ERROR" ]; then
-            echo "⨯ Authentication error: $ERROR"
+            logger error "Authentication error: $ERROR"
             exit 1
         else
             # Successfully authenticated
             ACCESS_TOKEN=$(echo "$TOKEN_RESPONSE" | jq -r '.access_token')
             REFRESH_TOKEN=$(echo "$TOKEN_RESPONSE" | jq -r '.refresh_token')
             echo ""
-            echo "✓ Authentication successful!"
+            logger success "Authentication successful!"
             echo ""
         fi
     done
 
     # Fetch available game profiles
-    echo "Fetching game profiles..."
+    logger info "Fetching game profiles..."
 
     PROFILES_RESPONSE=$(curl -s -X GET "https://account-data.hytale.com/my-account/get-profiles" \
       -H "Authorization: Bearer $ACCESS_TOKEN")
@@ -296,30 +343,30 @@ perform_authentication() {
     PROFILES_COUNT=$(echo "$PROFILES_RESPONSE" | jq '.profiles | length')
 
     if [ "$PROFILES_COUNT" -eq 0 ]; then
-        echo "Error: No game profiles found. You need to purchase Hytale to run a server."
+        logger error "No game profiles found. You need to purchase Hytale to run a server."
         exit 1
     fi
 
     # Select profile based on GAME_PROFILE variable
     if [ -n "$GAME_PROFILE" ]; then
         # User specified a profile username, find matching UUID
-        echo "Looking for profile: $GAME_PROFILE"
+        logger info "Looking for profile: $GAME_PROFILE"
         PROFILE_UUID=$(echo "$PROFILES_RESPONSE" | jq -r ".profiles[] | select(.username == \"$GAME_PROFILE\") | .uuid")
 
         if [ -z "$PROFILE_UUID" ] || [ "$PROFILE_UUID" = "null" ]; then
-            echo "Error: Profile '$GAME_PROFILE' not found."
-            echo "Available profiles:"
-            echo "$PROFILES_RESPONSE" | jq -r '.profiles[] | "  - \(.username)"'
+            logger error "Profile '$GAME_PROFILE' not found."
+            logger info "Available profiles:"
+            logger success "$PROFILES_RESPONSE" | jq -r '.profiles[] | "  - \(.username)"'
             exit 1
         fi
 
-        echo "✓ Using profile: $GAME_PROFILE (UUID: $PROFILE_UUID)"
+        logger success "Using profile: $GAME_PROFILE (UUID: $PROFILE_UUID)"
     else
         # Use first profile from the list
         PROFILE_UUID=$(echo "$PROFILES_RESPONSE" | jq -r '.profiles[0].uuid')
         PROFILE_USERNAME=$(echo "$PROFILES_RESPONSE" | jq -r '.profiles[0].username')
 
-        echo "✓ Using default profile: $PROFILE_USERNAME (UUID: $PROFILE_UUID)"
+        logger success "Using default profile: $PROFILE_USERNAME (UUID: $PROFILE_UUID)"
     fi
 
     echo ""
@@ -335,54 +382,54 @@ perform_authentication() {
 }
 
 # Copy start.sh template to /home/container
-echo "Copying start.sh template to /home/container..."
+logger info "Copying start.sh template to /home/container..."
 cp -f /usr/local/bin/start.sh start.sh
 chmod 755 start.sh
 
 # Check if the backup directory exists
 if [ ! -d "backup" ]; then
-    echo "Backup directory does not exist. Creating it..."
+    logger info "Backup directory does not exist. Creating it..."
     mkdir -p backup
 
     if [ $? -ne 0 ]; then
-        echo "Failed to create backup directory: /backup"
+        logger error "Failed to create backup directory: /backup"
         exit 1
     fi
 else
-    echo "Backup directory already exists."
+    logger info "Backup directory already exists."
 fi
 chmod -R 755 backup
 
 # Check if the downloader exists
 if [ ! -f "$DOWNLOADER" ]; then
-    echo "Error: Hytale downloader not found!"
-    echo "Please run the installation script first."
+    logger error "Hytale downloader not found!"
+    logger error "Please run the installation script first."
     exit 1
 fi
 
 # Check if the downloader is executable
 if [ ! -x "$DOWNLOADER" ]; then
-    echo "Setting executable permissions..."
+    logger info "Setting executable permissions..."
     chmod +x "$DOWNLOADER"
 fi
 
 # Create version file
 if [ ! -f "$VERSION_FILE" ]; then
-    echo "Creating version check file..."
+    logger info "Creating version check file..."
     touch $VERSION_FILE
 fi
 
 #Fix system permissions
 if [ -f "$VERSION_FILE" ] && { [ ! -r "$VERSION_FILE" ] || [ ! -w "$VERSION_FILE" ]; }; then
-    echo "Fixing permissions on $VERSION_FILE..."
+    logger warn "Fixing permissions on $VERSION_FILE..."
     chmod 644 "$VERSION_FILE"
 fi
 if [ -f "$DOWNLOAD_CRED_FILE" ] && { [ ! -r "$DOWNLOAD_CRED_FILE" ] || [ ! -w "$DOWNLOAD_CRED_FILE" ]; }; then
-    echo "Fixing permissions on $DOWNLOAD_CRED_FILE..."
+    logger warn "Fixing permissions on $DOWNLOAD_CRED_FILE..."
     chmod 644 "$DOWNLOAD_CRED_FILE"
 fi
 if [ -f "$AUTH_CACHE_FILE" ] && { [ ! -r "$AUTH_CACHE_FILE" ] || [ ! -w "$AUTH_CACHE_FILE" ]; }; then
-    echo "Fixing permissions on $AUTH_CACHE_FILE..."
+    logger warn "Fixing permissions on $AUTH_CACHE_FILE..."
     chmod 644 "$AUTH_CACHE_FILE"
 fi
 
@@ -391,27 +438,27 @@ INITIAL_SETUP=0
 # Check if credentials file exists, if not run the updater
 if [ ! -f "$DOWNLOAD_CRED_FILE" ]; then
     INITIAL_SETUP=1
-    echo "Credentials file not found, running initial setup..."
-    echo "Downloading server files..."
+    logger warn "Credentials file not found, running initial setup..."
+    logger info "Downloading server files..."
 
     $DOWNLOADER -check-update
 
     echo " "
-    echo "════════════════════════════════════════════════════════════════"
-    echo "  NOTE: You must have purchased Hytale on the account you are using to authenticate."
-    echo "════════════════════════════════════════════════════════════════"
+    printc "{MAGENTA}╔══════════════════════════════════════════════════════════════════════════════════════╗"
+    printc "{MAGENTA}║  {BLUE}NOTE: You must have purchased Hytale on the account you are using to authenticate.  {MAGENTA}║"
+    printc "{MAGENTA}╚══════════════════════════════════════════════════════════════════════════════════════╝"
     echo " "
 
     if ! $DOWNLOADER -patchline $PATCHLINE -download-path server.zip; then
 
         echo ""
-        echo "Error: Failed to download Hytale server files."
-        echo "This may indicate:"
-        echo "  - You haven't purchased Hytale"
-        echo "  - Authentication credentials are invalid or expired"
+        logger error "Failed to download Hytale server files."
+        logger error "This may indicate:"
+        logger error "  - You haven't purchased Hytale"
+        logger error "  - Authentication credentials are invalid or expired"
         echo ""
 
-        echo "Removing invalid credential file..."
+        logger warn "Removing invalid credential file..."
         rm -f $DOWNLOAD_CRED_FILE
         exit 1
     fi
@@ -421,7 +468,7 @@ if [ ! -f "$DOWNLOAD_CRED_FILE" ]; then
 
     if [ $? -eq 0 ] && [ -n "$DOWNLOADER_VERSION" ]; then
         echo "$DOWNLOADER_VERSION" > $VERSION_FILE
-        echo "✓ Saved version info!"
+        logger success "Saved version info!"
     fi
 
     extract_server_files
@@ -429,13 +476,13 @@ fi
 
 # Run automatic update if enabled
 if [ "$AUTOMATIC_UPDATE" = "1" ] && [ "$INITIAL_SETUP" = "0" ]; then
-    echo "Checking for updates..."
+    logger info "Checking for updates..."
 
     # Read local version from file
     if [ -f "$VERSION_FILE" ]; then
         LOCAL_VERSION=$(cat $VERSION_FILE)
     else
-        echo "version file not found, forcing update"
+        logger warn "version file not found, forcing update"
         LOCAL_VERSION=""
     fi
 
@@ -444,80 +491,80 @@ if [ "$AUTOMATIC_UPDATE" = "1" ] && [ "$INITIAL_SETUP" = "0" ]; then
 
     # Check if version command failed
     if [ $? -ne 0 ] || [ -z "$DOWNLOADER_VERSION" ]; then
-        echo "Error: Failed to get downloader version. This may indicate authentication issues."
-        echo "Output: $DOWNLOADER_VERSION"
+        logger error "Failed to get downloader version. This may indicate authentication issues."
+        logger error "Output: $DOWNLOADER_VERSION"
         exit 1
     else
         if [ -n "$LOCAL_VERSION" ]; then
-            echo "Local version: $LOCAL_VERSION"
+            logger info "Local version: $LOCAL_VERSION"
         fi
-        echo "Downloader version: $DOWNLOADER_VERSION"
+        logger info "Downloader version: $DOWNLOADER_VERSION"
 
         # Compare versions
         if [ "$LOCAL_VERSION" != "$DOWNLOADER_VERSION" ]; then
-            echo "⨯ Version mismatch, running update..."
+            logger warn "Version mismatch, running update..."
 
             $DOWNLOADER -check-update
             $DOWNLOADER -patchline $PATCHLINE -download-path server.zip
 
             # Update version file after successful update
             echo "$DOWNLOADER_VERSION" > $VERSION_FILE
-            echo "✓ Saved version info!"
+            logger success "Saved version info!"
 
             extract_server_files
         else
-            echo "⨯ Versions match, skipping update"
+            logger info "Versions match, skipping update"
         fi
     fi
 fi
 
 # Check if server files were downloaded correctly
 if [ ! -f "HytaleServer.jar" ]; then
-    echo "Error: HytaleServer.jar not found!"
-    echo "Server files were not downloaded correctly."
+    logger error "HytaleServer.jar not found!"
+    logger error "Server files were not downloaded correctly."
     exit 1
 fi
 
 # Download the latest hytale-sourcequery plugin if enabled
 if [ "$ENABLE_SOURCE_QUERY_SUPPORT" = "1" ]; then
-    echo "Source Query support enabled, checking for plugin..."
+    logger info "Source Query support enabled, checking for plugin..."
 
     # Create mods directory if it doesn't exist
     if [ ! -d "$MODS_FOLDER" ]; then
-        echo "Creating mods directory..."
+        logger warn "Creating mods directory..."
         mkdir -p $MODS_FOLDER
     fi
 
     if [ -d "$MODS_FOLDER" ] && { [ ! -r "$MODS_FOLDER" ] || [ ! -w "$MODS_FOLDER" ] || [ ! -x "$MODS_FOLDER" ]; }; then
-        echo "Fixing permissions on directory $MODS_FOLDER..."
+        logger warn "Fixing permissions on directory $MODS_FOLDER..."
         chmod 755 "$MODS_FOLDER"
     fi
 
-    echo "Downloading latest hytale-sourcequery plugin..."
+    logger info "Downloading latest hytale-sourcequery plugin..."
     LATEST_URL=$(curl -sSL https://api.github.com/repos/physgun-com/hytale-sourcequery/releases/latest | jq -r '.assets[0].browser_download_url // empty')
 
     if [ -n "$LATEST_URL" ]; then
         curl -sSL -o mods/hytale-sourcequery.jar "$LATEST_URL"
 
         if [ $? -eq 0 ]; then
-            echo "✓ Successfully downloaded hytale-sourcequery plugin to mods folder"
+            logger success "Successfully downloaded hytale-sourcequery plugin to mods folder"
         else
-            echo "⨯ Failed to download hytale-sourcequery plugin"
+            logger error "Failed to download hytale-sourcequery plugin"
         fi
     else
-        echo "⨯ Could not find hytale-sourcequery plugin download URL"
+        logger error "Could not find hytale-sourcequery plugin download URL"
     fi
 fi
 
 # Check if GSP mode (tokens provided externally)
 if [ -n "$OVERRIDE_SESSION_TOKEN" ] && [ -n "$OVERRIDE_IDENTITY_TOKEN" ]; then
-    echo "Using provided session and identity tokens..."
+    logger info "Using provided session and identity tokens..."
     SESSION_TOKEN="$OVERRIDE_SESSION_TOKEN"
     IDENTITY_TOKEN="$OVERRIDE_IDENTITY_TOKEN"
 else
     # Standard mode: perform authentication
     if check_cached_tokens && load_cached_tokens; then
-        echo "Using cached authentication..."
+        logger info "Using cached authentication..."
         if refresh_access_token; then
             # Update cache in case refresh token rotated
             save_auth_tokens
@@ -527,7 +574,7 @@ else
             fi
         else
             # Refresh failed, need full re-auth
-            echo "Refresh token expired, re-authenticating..."
+            logger info "Refresh token expired, re-authenticating..."
             rm -f "$AUTH_CACHE_FILE"
             perform_authentication
         fi
@@ -543,7 +590,7 @@ export IDENTITY_TOKEN
 
 # Enforce file and folder permissions if enabled
 if [ "$ENFORCE_PERMISSIONS" = "1" ]; then
-    echo "Enforcing permissions... This might take a while. Please be patient."
+    logger warn "Enforcing permissions... This might take a while. Please be patient."
     # Set all directories to 755
     find . -type d -exec chmod 755 {} \;
     # Set all files to 644, excluding executables that need to remain executable
@@ -553,7 +600,7 @@ if [ "$ENFORCE_PERMISSIONS" = "1" ]; then
         ! -name "qemu-x86_64-static" \
         ! -name "start.sh" \
         -exec chmod 644 {} \;
-    echo "✓ Permissions enforced (files: 644, folders: 755)"
+    logger success "Permissions enforced (files: 644, folders: 755)"
 fi
 
 # Convert startup variables to from {{VARIABLE}} to ${VARIABLE} for the evaluating
