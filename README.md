@@ -82,6 +82,8 @@ When a new version of the egg is released, follow these steps to update:
 4. Select the downloaded JSON file and click **Submit**
 5. You are done!
 
+> **Need help?** Watch the [Pelican Update Tutorial](https://www.youtube.com/watch?v=V8NPn6ZxezY) for a step-by-step guide.
+
 ### Pterodactyl Panel
 
 1. Download the latest [egg-hytale.pterodactyl.json](egg-hytale.pterodactyl.json) file from this repository
@@ -90,6 +92,8 @@ When a new version of the egg is released, follow these steps to update:
 4. Click on the hytale egg to open it
 5. On top of the page there update egg section where you can select the new egg Click **Update Egg**
 6. You are done!
+
+> **Need help?** Watch the [Pterodactyl Update Tutorial](https://www.youtube.com/watch?v=rtptzLBfZ24) for a step-by-step guide.
 
 ## Server Configuration
 
