@@ -254,7 +254,7 @@
             "name": "Source Query Listening Port",
             "description": "Specifies the port used by the Source Query service to handle A2S requests. This must be separate from the main game port. By default, it is set to the game port plus one.",
             "env_variable": "QUERY_PORT",
-            "default_value": "5021",
+            "default_value": "5521",
             "user_viewable": true,
             "user_editable": true,
             "rules": "required|integer|between:1,65535",

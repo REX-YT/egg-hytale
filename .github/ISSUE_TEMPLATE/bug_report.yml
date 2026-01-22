@@ -85,6 +85,20 @@ body:
       required: true
 
   - type: dropdown
+    id: latest-version
+    attributes:
+      label: Are you using the latest version of the egg?
+      description: |
+        Have you re-imported the egg from this repository recently?
+        Check the latest commit date on GitHub to see if there have been updates since you installed it.
+      options:
+        - Yes, I just re-imported the egg
+        - I'm not sure / I haven't checked
+        - No, I'm using an older version
+    validations:
+      required: true
+
+  - type: dropdown
     id: stage
     attributes:
       label: When does the issue occur?
