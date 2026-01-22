@@ -12,9 +12,12 @@ Panel eggs for hosting Hytale game servers on both Pelican and Pterodactyl panel
 >
 > If you encounter any issues or have questions, please don't hesitate to ask. We strive to respond and resolve issues as quickly as possible.
 >
+>
 > **How to get help:**
 > 1. **Search Existing Issues:** Check the [GitHub Issues](https://github.com/NATroutter/egg-hytale/issues) to see if your problem has already been reported or solved.
 > 2. **Open a New Issue:** If you can't find a solution, [open a new issue](https://github.com/NATroutter/egg-hytale/issues/new/choose).
+>
+> ***Please Note:** We are only humans and unfortunately we have to sleep and have lives outside of this project. Support is offered within a humanly possible timeframe, so please be patient.*
 
 ## Overview
 
@@ -73,28 +76,13 @@ When a new version of the egg is released, follow these steps to update:
 
 ### Pelican Panel
 
-**Important:** Pelican cannot update eggs that have active servers. Choose one of these methods:
+1. Download the latest [egg-hytale.pelican.json](egg-hytale.pelican.json) file from this repository
+2. In your Pelican Panel, navigate to **Admin Panel** > **Eggs**
+3. Click **Import** on top right
+4. Select the downloaded JSON file and click **Submit**
+5. You are done!
 
-#### Method 1: Full Reinstall
-
-1. **Backup your server files** - Download all important data from `/home/container`
-2. **Delete all servers** using the Hytale egg
-3. **Delete the old egg** from **Admin Panel** > **Eggs**
-4. Download the latest [egg-hytale.pelican.json](egg-hytale.pelican.json) file from this repository
-5. **Import the new egg** via **Admin Panel** > **Eggs** > **Import**
-6. **Recreate your servers** and restore your backed-up files
-
-#### Method 2: Manual Update (Advanced)
-
-1. Download the latest [egg-hytale.pelican.json](egg-hytale.pelican.json) file
-2. Open both the new egg file and your current egg in a text editor
-3. Compare the files and manually copy changes to your egg:
-   - Navigate to **Admin Panel** > **Eggs** > Click on the Hytale egg
-   - Update **Docker Images**, **Startup Command**, **Configuration Files**, and **Variables** sections
-   - Pay special attention to new variables or changed default values
-4. Save changes and restart your servers
-
-> **Note:** Method 2 requires careful attention to avoid configuration errors. Always backup before making changes.
+> **Need help?** Watch the [Pelican Update Tutorial](https://www.youtube.com/watch?v=V8NPn6ZxezY) for a step-by-step guide.
 
 ### Pterodactyl Panel
 
@@ -103,6 +91,9 @@ When a new version of the egg is released, follow these steps to update:
 3. Click on the nest where hytale egg is imported
 4. Click on the hytale egg to open it
 5. On top of the page there update egg section where you can select the new egg Click **Update Egg**
+6. You are done!
+
+> **Need help?** Watch the [Pterodactyl Update Tutorial](https://www.youtube.com/watch?v=rtptzLBfZ24) for a step-by-step guide.
 
 ## Server Configuration
 
@@ -116,17 +107,24 @@ The following options can be configured:
 | `Allow Operators` | Do you wish to allow operators or not | `true` |
 | `Auth Mode` | Authentication mode (authenticated or offline) | `authenticated` |
 | `Automatic Update` | Update the hytale server automatically | `true` |
+| `Boot Commands` | A list of commands to run when the server boots. | (empty) |
+| `Enforce Permissions` | Enforce correct file permissions on startup. This may increase startup time. | `false` |
+| `Event Debug` | Enables detailed debug logging for the internal event system. | `false` |
+| `Force Network Flush` | Forces the network buffer to flush immediately. Can help with latency debugging. | `false` |
 | `JVM Arguments` | Additional Java Virtual Machine arguments for advanced configuration. | See egg config |
 | `Leverage Ahead-Of-Time Cache` | The server ships with a pre-trained AOT cache (HytaleServer.aot) that improves boot times by skipping JIT warmup | `true` |
 | `Disable Sentry Crash Reporting` | Disable Sentry during active plugin development. Hytale uses Sentry to track crashes. Disable it to avoid submitting your development errors | `true` |
 | `Enable Backups` | Enable automatic backups | `false` |
 | `Backup Frequency` | Backup interval in minutes | `30` |
+| `Maximum Backups` | The maximum number of backups to retain. Older backups will be deleted when this limit is reached. | `5` |
 | `Patchline` | What release channel you want to use | `release` |
+| `Persistent Authentication` | Enables caching of authentication tokens. This prevents the need to re-authenticate via the web browser on every server restart. | `ENABLED` |
 | `Memory overhead` | The amount of RAM (in MB) kept aside for the system so the server doesn’t use everything. Java will get the rest. | `0` |
 | `Logger Level` | Sets the logging level for specific components. Use a comma-separated list in the format LoggerName:LEVEL (for example, com.example:INFO) to control how much detail is logged. | `empty` |
-| `Validate Assets` | Causes the server to exit with an error code if assets are invalid. Leave empty to skip validation. | `0` |
+| `Source Query Support` | Automatically installs the Hytale Source Query plugin, allowing external services to query server status. | `false` |
+| `Validate Assets` | Causes the server to exit with an error code if assets are invalid. Leave empty to skip validation. | `false` |
 | `Validate prefabs` | Forces the server to stop and exit with an error if any specified prefab types are invalid. Provide a comma-separated list of prefab categories (e.g. PHYSICS,BLOCKS,BLOCK_STATES,ENTITIES,BLOCK_FILLER) to check. Leave empty to skip validation. | `0` |
-| `Validate world generation` | Causes the server to exit with an error code if world gen is invalid. Leave empty to skip validation. | `0` |
+| `Validate world generation` | Causes the server to exit with an error code if world gen is invalid. Leave empty to skip validation. | `false` |
 
 ### First-Time Authentication
 

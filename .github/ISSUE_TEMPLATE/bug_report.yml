@@ -100,6 +100,19 @@ body:
     validations:
       required: true
 
+  - type: dropdown
+    id: reproducibility
+    attributes:
+      label: Is the issue reproducible?
+      description: Does this happen every time you try, or is it intermittent?
+      options:
+        - Yes, it happens every time
+        - It happens frequently but not always
+        - It happens rarely / randomly
+        - I cannot reproduce it consistently
+    validations:
+      required: true
+
   - type: textarea
     id: description
     attributes:

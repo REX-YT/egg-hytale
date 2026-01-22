@@ -37,7 +37,6 @@ fi
 JAVA_CMD="${JAVA_CMD} -jar HytaleServer.jar"
 
 # Add assets parameter if set and ends with .zip
-echo "Using asset pack at: $ASSET_PACK"
 if [ -n "${ASSET_PACK}" ]; then
     JAVA_CMD="${JAVA_CMD} --assets ${ASSET_PACK}"
 fi

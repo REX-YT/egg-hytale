@@ -49,6 +49,11 @@ RUN mkdir -p /egg-hytale
 COPY --chmod=755 ./lib /egg-hytale/lib
 RUN sed -i 's/\r$//' /egg-hytale/lib/*.sh
 
+# Create dmidecode shim for Docker usage
+RUN echo "Creating local dmidecode for Docker usage." && printf '#!/bin/sh\nif [ "$1" = "-s" ] && [ "$2" = "system-uuid" ]; then\n    UUID_FILE="$HOME/.hytale_system_uuid"\n\n    if [ -f "$UUID_FILE" ]; then\n        cat "$UUID_FILE"\n    else\n        if command -v uuidgen >/dev/null 2>&1; then\n            uuidgen | tr "A-Z" "a-z" | tee "$UUID_FILE" >/dev/null\n        else\n            cat /proc/sys/kernel/random/uuid | tee "$UUID_FILE" >/dev/null\n        fi\n        cat "$UUID_FILE"\n    fi\n\n    printf "\\n"\n    exit 0\nfi\n\necho "dmidecode shim: unsupported args: $*" >&2\nexit 1\n' > /usr/local/bin/dmidecode && chmod +x /usr/local/bin/dmidecode
+
+RUN sed -i 's/\r$//' /entrypoint.sh
+
 # Create the container user
 RUN useradd -m -d /home/container -s /bin/bash container
 
