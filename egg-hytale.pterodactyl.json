@@ -114,7 +114,17 @@
             "name": "JVM Arguments",
             "description": "Additional Java Virtual Machine arguments for advanced configuration.\r\n\r\nWarning: Improper JVM settings can lead to poor performance, crashes, or failure to start. Only modify if you understand what these parameters do.",
             "env_variable": "JVM_ARGS",
-            "default_value": "-XX:+UseCompressedOops -XX:+UseCompressedClassPointers -XX:-UseCompactObjectHeaders -XX:+UseG1GC -XX:+UseStringDeduplication -Xlog:aot",
+            "default_value": "-XX:+UseCompressedOops -XX:+UseCompressedClassPointers -XX:+UseCompactObjectHeaders -XX:+UseG1GC -XX:+UseStringDeduplication -Xlog:aot",
+            "user_viewable": true,
+            "user_editable": true,
+            "rules": "nullable|string",
+            "field_type": "text"
+        },
+        {
+            "name": "AOT JVM Arguments",
+            "description": "Java Virtual Machine arguments used only while generating HytaleServer.aot from HytaleServer.aot.config. Keep these compatible with production JVM arguments that affect class loading, linking, object layout, agents, or module access.",
+            "env_variable": "AOT_JVM_ARGS",
+            "default_value": "-XX:+UseCompressedOops -XX:+UseCompressedClassPointers -XX:+UseCompactObjectHeaders -XX:+UseG1GC -XX:+UseStringDeduplication -Xlog:aot",
             "user_viewable": true,
             "user_editable": true,
             "rules": "nullable|string",
@@ -122,7 +132,7 @@
         },
         {
             "name": "Leverage Ahead-Of-Time Cache",
-            "description": "The server ships with a pre-trained AOT cache (HytaleServer.aot) that improves boot times by skipping JIT warmup. See https:\/\/openjdk.org\/jeps\/514",
+            "description": "Generate and use a local AOT cache (HytaleServer.aot) from the server-provided HytaleServer.aot.config to improve boot and warmup time. See https:\/\/openjdk.org\/jeps\/514",
             "env_variable": "LEVERAGE_AHEAD_OF_TIME_CACHE",
             "default_value": "1",
             "user_viewable": true,

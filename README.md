@@ -31,7 +31,7 @@ Both Pelican Panel and Pterodactyl Panel are fully supported with dedicated egg 
 - Multi-architecture support (x86_64 & ARM64)
 - Automatic `hytale-sourcequery` plugin installation (Optional)
 - Built-in server validation tools (World, Assets, Prefabs)
-- Performance optimizations via AOT Cache support
+- Performance optimizations via locally generated AOT cache support
 - Configurable server parameters and JVM arguments
 - Integrated backup management system
 - Multiple authentication modes (Standard & GSP)
@@ -112,7 +112,8 @@ The following options can be configured:
 | `Event Debug` | Enables detailed debug logging for the internal event system. | `false` |
 | `Force Network Flush` | Forces the network buffer to flush immediately. Can help with latency debugging. | `false` |
 | `JVM Arguments` | Additional Java Virtual Machine arguments for advanced configuration. | See egg config |
-| `Leverage Ahead-Of-Time Cache` | The server ships with a pre-trained AOT cache (HytaleServer.aot) that improves boot times by skipping JIT warmup | `true` |
+| `AOT JVM Arguments` | JVM arguments used only while generating `HytaleServer.aot` from `HytaleServer.aot.config`. | See egg config |
+| `Leverage Ahead-Of-Time Cache` | Generates and uses a local AOT cache (`HytaleServer.aot`) from the server-provided `HytaleServer.aot.config` to improve boot and warmup time. | `true` |
 | `Disable Sentry Crash Reporting` | Disable Sentry during active plugin development. Hytale uses Sentry to track crashes. Disable it to avoid submitting your development errors | `true` |
 | `Enable Backups` | Enable automatic backups | `false` |
 | `Backup Frequency` | Backup interval in minutes | `30` |

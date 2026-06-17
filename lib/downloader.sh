@@ -13,6 +13,120 @@ ensure_downloader() {
     fi
 }
 
+update_downloader() {
+    local UPDATE_OUTPUT=""
+    local TEMP_DIR=""
+    local UPDATED=0
+
+    logger info "Checking hytale-downloader for updates..."
+    UPDATE_OUTPUT=$($DOWNLOADER -check-update 2>&1)
+
+    if [ $? -ne 0 ]; then
+        logger warn "Failed to check hytale-downloader updates; continuing with installed downloader."
+        return 0
+    fi
+
+    if ! printf "%s" "$UPDATE_OUTPUT" | grep -q "A new version of hytale-downloader is available"; then
+        logger info "hytale-downloader is up to date."
+        return 0
+    fi
+
+    logger warn "A newer hytale-downloader is available, updating..."
+    TEMP_DIR=$(mktemp -d)
+
+    if [ -z "$TEMP_DIR" ] || [ ! -d "$TEMP_DIR" ]; then
+        logger warn "Failed to create temporary directory for hytale-downloader update."
+        return 0
+    fi
+
+    if curl -fsSL -o "$TEMP_DIR/$DOWNLOAD_FILE" "$DOWNLOAD_URL" \
+        && unzip -oq "$TEMP_DIR/$DOWNLOAD_FILE" -d "$TEMP_DIR"; then
+
+        if [ -f "$TEMP_DIR/hytale-downloader-linux-amd64" ]; then
+            cp -f "$TEMP_DIR/hytale-downloader-linux-amd64" ./hytale-downloader-linux-amd64
+            chmod +x ./hytale-downloader-linux-amd64
+            UPDATED=1
+        fi
+
+        if [ -f "$TEMP_DIR/hytale-downloader-linux-arm64" ]; then
+            cp -f "$TEMP_DIR/hytale-downloader-linux-arm64" ./hytale-downloader-linux-arm64
+            chmod +x ./hytale-downloader-linux-arm64
+            UPDATED=1
+        elif [ -f ./hytale-downloader-linux-arm64 ]; then
+            chmod +x ./hytale-downloader-linux-arm64
+        fi
+    else
+        logger warn "Failed to download or extract hytale-downloader update; continuing with installed downloader."
+    fi
+
+    rm -rf "$TEMP_DIR"
+
+    if [ "$UPDATED" = "1" ]; then
+        logger success "hytale-downloader updated successfully."
+    else
+        logger warn "hytale-downloader update did not include an expected linux binary; continuing with installed downloader."
+    fi
+}
+
+ensure_aot_cache() {
+    local AOT_CONFIG_FILE="HytaleServer.aot.config"
+    local AOT_CACHE_FILE="HytaleServer.aot"
+    local AOT_LOG_FILE=""
+    local AOT_STATUS=0
+
+    if [ "$LEVERAGE_AHEAD_OF_TIME_CACHE" != "1" ]; then
+        return 0
+    fi
+
+    if [ ! -f "$AOT_CONFIG_FILE" ]; then
+        logger warn "AOT config not found, skipping AOT cache generation."
+        return 0
+    fi
+
+    if [ -f "$AOT_CACHE_FILE" ] && [ "$AOT_CACHE_FILE" -nt "$AOT_CONFIG_FILE" ]; then
+        logger info "AOT cache is up to date."
+        return 0
+    fi
+
+    logger info "Generating AOT cache from $AOT_CONFIG_FILE..."
+    rm -f "$AOT_CACHE_FILE"
+
+    AOT_LOG_FILE=$(mktemp)
+    if [ -z "$AOT_LOG_FILE" ]; then
+        logger warn "Failed to create temporary AOT log file."
+        return 0
+    fi
+
+    java ${AOT_JVM_ARGS} -XX:-AOTClassLinking -XX:AOTMode=create -XX:AOTConfiguration="$AOT_CONFIG_FILE" -XX:AOTCacheOutput="$AOT_CACHE_FILE" -cp HytaleServer.jar 2>&1 | tee "$AOT_LOG_FILE"
+    AOT_STATUS=${PIPESTATUS[0]}
+
+    if [ "$AOT_STATUS" -eq 0 ]; then
+        logger success "AOT cache generated successfully."
+    else
+        if grep -q "timestamp has changed" "$AOT_LOG_FILE"; then
+            printc "{MAGENTA}╔═════════════════════════════════════════════════════════════════════════════╗"
+            printc "{MAGENTA}║               {YELLOW}AOT CACHE SKIPPED: HYTALE FILE MISMATCH                       {MAGENTA}║"
+            printc "{MAGENTA}╠═════════════════════════════════════════════════════════════════════════════╣"
+            printc "{MAGENTA}║                                                                             ║"
+            printc "{MAGENTA}║  {CYAN}The Hytale server files include an AOT config that does not match          {MAGENTA}║"
+            printc "{MAGENTA}║  {CYAN}the server jar shipped in this download.                                   {MAGENTA}║"
+            printc "{MAGENTA}║                                                                             ║"
+            printc "{MAGENTA}║  {CYAN}This usually means the Hytale developers updated HytaleServer.jar          {MAGENTA}║"
+            printc "{MAGENTA}║  {CYAN}but shipped an older or mismatched HytaleServer.aot.config file.           {MAGENTA}║"
+            printc "{MAGENTA}║                                                                             ║"
+            printc "{MAGENTA}║  {CYAN}This is not an egg issue. The server will continue without AOT cache       {MAGENTA}║"
+            printc "{MAGENTA}║  {CYAN}and AOT should work once Hytale ships matching files.                      {MAGENTA}║"
+            printc "{MAGENTA}║                                                                             ║"
+            printc "{MAGENTA}╚═════════════════════════════════════════════════════════════════════════════╝"
+        fi
+
+        logger warn "AOT cache generation failed; the server will start without AOT cache."
+        rm -f "$AOT_CACHE_FILE"
+    fi
+
+    rm -f "$AOT_LOG_FILE"
+}
+
 run_update_process() {
     local INITIAL_SETUP=0
 
@@ -115,7 +229,7 @@ run_auto_update() {
         if [ -n "$LOCAL_VERSION" ]; then
             logger info "Local version: $LOCAL_VERSION"
         fi
-        logger info "Downloader version: $DOWNLOADER_VERSION"
+        logger info "Available version: $DOWNLOADER_VERSION"
 
         if [ "$LOCAL_VERSION" != "$DOWNLOADER_VERSION" ]; then
             logger warn "Version mismatch, running update..."
