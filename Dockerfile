@@ -1,5 +1,4 @@
-# Use Eclipse Temurin JDK 25 on Ubuntu Noble as the base image
-FROM --platform=$TARGETOS/$TARGETARCH eclipse-temurin:25-jdk-noble
+FROM --platform=$TARGETOS/$TARGETARCH eclipse-temurin:25.0.2_10-jre-noble
 
 # Metadata
 LABEL author="NATroutter" maintainer="contact@natroutter.fi"

@@ -66,7 +66,7 @@ extract_server_files() {
         # Move contents from Server folder to current directory
         if [ -d "Server" ]; then
             logger info "Moving server files from Server directory..."
-            cp -rf Server/* .
+            cp -a Server/. .
             rm -rf ./Server
             logger success "Server files moved to root directory."
         fi

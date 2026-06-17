@@ -5,6 +5,12 @@ source "/egg-hytale/lib/system.sh"
 source "/egg-hytale/lib/downloader.sh"
 source "/egg-hytale/lib/plugins.sh"
 
+copy_startup_template() {
+    logger info "Copying start.sh template to /home/container..."
+    cp -f /usr/local/bin/start.sh start.sh
+    chmod 755 start.sh
+}
+
 DOWNLOAD_URL="https://downloader.hytale.com/hytale-downloader.zip"
 PATCHLINE_CACHE_FILE=".patchline-cache.txt"
 DOWNLOAD_FILE="hytale-downloader.zip"
@@ -23,6 +29,7 @@ setup_environment
 
 setup_backup_directory
 ensure_downloader
+update_downloader
 
 create_system_files
 
@@ -30,6 +37,7 @@ ensure_system_file_permissions
 
 run_update_process
 validate_server_files
+ensure_aot_cache
 install_sourcequery
 
 
@@ -81,13 +89,11 @@ fi
 # Enforce file and folder permissions if enabled
 enforce_permissions
 
-# Copy start.sh template to /home/container
-logger info "Copying start.sh template to /home/container..."
-cp -f /usr/local/bin/start.sh start.sh
-chmod 755 start.sh
+copy_startup_template
 
 logger info "Starting Hytale server..."
 
-# Convert startup variables to from {{VARIABLE}} to ${VARIABLE} for the evaluating
+# Convert startup variables from {{VARIABLE}} to ${VARIABLE} for evaluation.
+# The managed start.sh is copied after updates, so the default ./start.sh stays egg-owned.
 PARSED=$(echo "$STARTUP" | sed -e 's/{{/${/g' -e 's/}}/}/g')
 eval "$PARSED"

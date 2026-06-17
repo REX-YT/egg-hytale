@@ -14,7 +14,7 @@
 JAVA_CMD="java"
 
 # Add AOT cache if enabled
-if [ "${LEVERAGE_AHEAD_OF_TIME_CACHE}" = "1" ]; then
+if [ "${LEVERAGE_AHEAD_OF_TIME_CACHE}" = "1" ] && [ -f "HytaleServer.aot" ]; then
     JAVA_CMD="${JAVA_CMD} -XX:AOTCache=HytaleServer.aot"
 fi
 
