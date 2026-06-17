@@ -68,6 +68,49 @@ update_downloader() {
     fi
 }
 
+downloader_output_has_expired_auth() {
+    printf "%s" "$1" | grep -qiE "invalid_grant|refresh token expired|authorization grant"
+}
+
+clear_downloader_credentials() {
+    logger warn "Hytale downloader authentication expired; clearing cached downloader credentials."
+    rm -f "$DOWNLOAD_CRED_FILE"
+}
+
+download_server_archive() {
+    local DOWNLOAD_LOG_FILE=""
+    local DOWNLOAD_STATUS=0
+
+    DOWNLOAD_LOG_FILE=$(mktemp)
+    if [ -z "$DOWNLOAD_LOG_FILE" ]; then
+        logger error "Failed to create temporary downloader log file."
+        return 1
+    fi
+
+    $DOWNLOADER -patchline "$PATCHLINE" -download-path server.zip 2>&1 | tee "$DOWNLOAD_LOG_FILE"
+    DOWNLOAD_STATUS=${PIPESTATUS[0]}
+
+    if grep -qiE "invalid_grant|refresh token expired|authorization grant" "$DOWNLOAD_LOG_FILE"; then
+        clear_downloader_credentials
+        rm -f "$DOWNLOAD_LOG_FILE"
+        return 2
+    fi
+
+    if [ "$DOWNLOAD_STATUS" -ne 0 ]; then
+        rm -f "$DOWNLOAD_LOG_FILE"
+        return 1
+    fi
+
+    if [ ! -f "server.zip" ]; then
+        logger error "Downloader completed but server.zip was not created."
+        rm -f "$DOWNLOAD_LOG_FILE"
+        return 1
+    fi
+
+    rm -f "$DOWNLOAD_LOG_FILE"
+    return 0
+}
+
 ensure_aot_cache() {
     local AOT_CONFIG_FILE="HytaleServer.aot.config"
     local AOT_CACHE_FILE="HytaleServer.aot"
@@ -148,7 +191,16 @@ run_update_process() {
         if [ "$PATCHLINE" != "$CACHED_PATCHLINE" ]; then
             logger warn "Patchline mismatch, running update..."
             $DOWNLOADER -check-update
-            $DOWNLOADER -patchline $PATCHLINE -download-path server.zip
+            download_server_archive
+            local DOWNLOAD_STATUS=$?
+
+            if [ "$DOWNLOAD_STATUS" -eq 2 ]; then
+                run_initial_setup
+                return 0
+            elif [ "$DOWNLOAD_STATUS" -ne 0 ]; then
+                logger error "Failed to download Hytale server files."
+                exit 1
+            fi
 
             save_patchline_version
             extract_server_files
@@ -167,11 +219,12 @@ run_patchline_change() {
     logger info "Updating server to patchline: $PATCHLINE"
 
     $DOWNLOADER -check-update
-    if ! $DOWNLOADER -patchline $PATCHLINE -download-path server.zip; then
+    download_server_archive
+    local DOWNLOAD_STATUS=$?
+
+    if [ "$DOWNLOAD_STATUS" -ne 0 ]; then
         echo ""
         logger error "Failed to download Hytale server files."
-        logger warn "Removing invalid credential file..."
-        rm -f $DOWNLOAD_CRED_FILE
         exit 1
     fi
 
@@ -196,11 +249,12 @@ run_initial_setup() {
     printc "{MAGENTA}╚══════════════════════════════════════════════════════════════════════════════════════╝"
     echo " "
 
-    if ! $DOWNLOADER -patchline $PATCHLINE -download-path server.zip; then
+    download_server_archive
+    local DOWNLOAD_STATUS=$?
+
+    if [ "$DOWNLOAD_STATUS" -ne 0 ]; then
         echo ""
         logger error "Failed to download Hytale server files."
-        logger warn "Removing invalid credential file..."
-        rm -f $DOWNLOAD_CRED_FILE
         exit 1
     fi
 
@@ -216,14 +270,26 @@ run_auto_update() {
     local LOCAL_VERSION=""
     if [ -f "$VERSION_FILE" ]; then
         LOCAL_VERSION=$(cat $VERSION_FILE)
+        if downloader_output_has_expired_auth "$LOCAL_VERSION"; then
+            logger warn "Ignoring invalid cached version info from expired downloader authentication."
+            LOCAL_VERSION=""
+        fi
     else
         logger warn "Version file not found, forcing update"
     fi
 
     local DOWNLOADER_VERSION=$($DOWNLOADER -print-version -skip-update-check 2>&1)
+    local VERSION_STATUS=$?
 
-    if [ $? -ne 0 ] || [ -z "$DOWNLOADER_VERSION" ]; then
-        logger error "Failed to get downloader version."
+    if downloader_output_has_expired_auth "$DOWNLOADER_VERSION"; then
+        clear_downloader_credentials
+        run_initial_setup
+        return 0
+    fi
+
+    if [ "$VERSION_STATUS" -ne 0 ] || [ -z "$DOWNLOADER_VERSION" ]; then
+        logger error "Failed to get available server version."
+        logger info "Response: $DOWNLOADER_VERSION"
         exit 1
     else
         if [ -n "$LOCAL_VERSION" ]; then
@@ -234,7 +300,16 @@ run_auto_update() {
         if [ "$LOCAL_VERSION" != "$DOWNLOADER_VERSION" ]; then
             logger warn "Version mismatch, running update..."
             $DOWNLOADER -check-update
-            $DOWNLOADER -patchline $PATCHLINE -download-path server.zip
+            download_server_archive
+            local DOWNLOAD_STATUS=$?
+
+            if [ "$DOWNLOAD_STATUS" -eq 2 ]; then
+                run_initial_setup
+                return 0
+            elif [ "$DOWNLOAD_STATUS" -ne 0 ]; then
+                logger error "Failed to download Hytale server files."
+                exit 1
+            fi
 
             save_patchline_version
             save_downloader_version
@@ -254,11 +329,20 @@ save_patchline_version() {
 
 save_downloader_version() {
     local DOWNLOADER_VERSION=$($DOWNLOADER -print-version -skip-update-check 2>&1)
-    if [ $? -eq 0 ] && [ -n "$DOWNLOADER_VERSION" ]; then
+    local VERSION_STATUS=$?
+
+    if downloader_output_has_expired_auth "$DOWNLOADER_VERSION"; then
+        clear_downloader_credentials
+        logger error "Failed to save version info because downloader authentication expired."
+        exit 1
+    fi
+
+    if [ "$VERSION_STATUS" -eq 0 ] && [ -n "$DOWNLOADER_VERSION" ]; then
         echo "$DOWNLOADER_VERSION" > $VERSION_FILE
         logger success "Saved version info!"
     else
-        logger error "Failed to get downloader version."
+        logger error "Failed to get available server version."
+        logger info "Response: $DOWNLOADER_VERSION"
         exit 1
     fi
 }
